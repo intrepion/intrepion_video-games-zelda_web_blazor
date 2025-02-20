@@ -1,0 +1,725 @@
+{
+  "entities": [
+    {
+      "keys": [
+        {
+          "key": "NormalizedName",
+          "ordering": 1
+        }
+      ],
+      "names": {
+        "entity": "Company",
+        "human": "Company",
+        "plural": "Companies",
+        "table": "Companies",
+        "url": "company"
+      },
+      "properties": [
+        {
+          "foreign": {
+            "display": [
+              {
+                "ordering": 1,
+                "property": "Name"
+              }
+            ],
+            "entity": "GameConsole"
+          },
+          "names": {
+            "human": "Game Consoles",
+            "property": "GameConsoles"
+          },
+          "type": "oneToMany"
+        },
+        {
+          "names": {
+            "human": "Is Test?",
+            "property": "IsTest"
+          },
+          "type": "boolean"
+        },
+        {
+          "names": {
+            "human": "Name",
+            "property": "Name"
+          },
+          "normalized": true,
+          "required": true,
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "keys": [
+        {
+          "key": "NormalizedName",
+          "ordering": 1
+        }
+      ],
+      "names": {
+        "entity": "Emulator",
+        "human": "Emulator",
+        "plural": "Emulators",
+        "table": "Emulators",
+        "url": "emulator"
+      },
+      "properties": [
+        {
+          "foreign": {
+            "display": [
+              {
+                "ordering": 1,
+                "property": "NormalizedName"
+              }
+            ],
+            "entity": "EmulatorCore"
+          },
+          "names": {
+            "human": "Emulator Cores",
+            "property": "EmulatorCores"
+          },
+          "type": "oneToMany"
+        },
+        {
+          "names": {
+            "human": "Is Test?",
+            "property": "IsTest"
+          },
+          "type": "boolean"
+        },
+        {
+          "names": {
+            "human": "Name",
+            "property": "Name"
+          },
+          "normalized": true,
+          "required": true,
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "keys": [
+        {
+          "key": "NormalizedName",
+          "ordering": 1
+        }
+      ],
+      "names": {
+        "entity": "EmulatorCore",
+        "human": "Emulator Core",
+        "plural": "Emulator Cores",
+        "table": "EmulatorCores",
+        "url": "emulator-core"
+      },
+      "properties": [
+        {
+          "foreign": {
+            "display": [
+              {
+                "ordering": 1,
+                "property": "NormalizedName"
+              }
+            ],
+            "entity": "Emulator",
+            "keys": [
+              {
+                "key": "NormalizedName",
+                "ordering": 1
+              }
+            ],
+            "property": "EmulatorCores",
+            "table": "Emulators"
+          },
+          "names": {
+            "human": "Emulator",
+            "property": "Emulator"
+          },
+          "type": "manyToOne"
+        },
+        {
+          "names": {
+            "human": "Is Test?",
+            "property": "IsTest"
+          },
+          "type": "boolean"
+        },
+        {
+          "names": {
+            "human": "Name",
+            "property": "Name"
+          },
+          "normalized": true,
+          "required": true,
+          "type": "string"
+        },
+        {
+          "foreign": {
+            "display": [
+              {
+                "ordering": 1,
+                "datetime": "StartDateTime"
+              }
+            ],
+            "entity": "PlaySession"
+          },
+          "names": {
+            "human": "Play Sessions",
+            "property": "PlaySessions"
+          },
+          "type": "oneToMany"
+        }
+      ]
+    },
+    {
+      "keys": [
+        {
+          "key": "NormalizedName",
+          "ordering": 1
+        }
+      ],
+      "names": {
+        "entity": "GameConsole",
+        "human": "Game Console",
+        "plural": "Game Consoles",
+        "table": "GameConsoles",
+        "url": "game-console"
+      },
+      "properties": [
+        {
+          "foreign": {
+            "display": [
+              {
+                "ordering": 1,
+                "property": "Name"
+              }
+            ],
+            "entity": "Company",
+            "keys": [
+              {
+                "key": "NormalizedName",
+                "ordering": 1
+              }
+            ],
+            "property": "GameConsoles",
+            "table": "Companies"
+          },
+          "names": {
+            "human": "Company",
+            "property": "Company"
+          },
+          "type": "manyToOne"
+        },
+        {
+          "names": {
+            "human": "Is Test?",
+            "property": "IsTest"
+          },
+          "type": "boolean"
+        },
+        {
+          "names": {
+            "human": "Name",
+            "property": "Name"
+          },
+          "normalized": true,
+          "required": true,
+          "type": "string"
+        },
+        {
+          "foreign": {
+            "display": [
+              {
+                "ordering": 1,
+                "property": "FileName"
+              }
+            ],
+            "entity": "Rom"
+          },
+          "names": {
+            "human": "Roms",
+            "property": "Roms"
+          },
+          "type": "oneToMany"
+        }
+      ]
+    },
+    {
+      "keys": [
+        {
+          "key": "NormalizedName",
+          "ordering": 1
+        }
+      ],
+      "names": {
+        "entity": "Language",
+        "human": "Language",
+        "plural": "Languages",
+        "table": "Languages",
+        "url": "language"
+      },
+      "properties": [
+        {
+          "names": {
+            "human": "Is Test?",
+            "property": "IsTest"
+          },
+          "type": "boolean"
+        },
+        {
+          "names": {
+            "human": "Name",
+            "property": "Name"
+          },
+          "normalized": true,
+          "required": true,
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "keys": [
+        {
+          "key": "StartDateTime",
+          "ordering": 1
+        }
+      ],
+      "names": {
+        "entity": "PlaySession",
+        "human": "Play Session",
+        "plural": "Play Sessions",
+        "table": "PlaySessions",
+        "url": "play-session"
+      },
+      "properties": [
+        {
+          "foreign": {
+            "display": [
+              {
+                "ordering": 1,
+                "property": "NormalizedName"
+              }
+            ],
+            "entity": "EmulatorCore",
+            "keys": [
+              {
+                "key": "NormalizedName",
+                "ordering": 1
+              }
+            ],
+            "property": "PlaySessions",
+            "table": "EmulatorCores"
+          },
+          "names": {
+            "human": "Emulator Core",
+            "property": "EmulatorCore"
+          },
+          "type": "manyToOne"
+        },
+        {
+          "names": {
+            "human": "End Date Time",
+            "property": "EndDateTime"
+          },
+          "type": "datetime"
+        },
+        {
+          "names": {
+            "human": "Is Test?",
+            "property": "IsTest"
+          },
+          "type": "boolean"
+        },
+        {
+          "foreign": {
+            "display": [
+              {
+                "ordering": 1,
+                "property": "FileName"
+              }
+            ],
+            "entity": "Rom",
+            "keys": [
+              {
+                "key": "AlphanumericSha256Sum",
+                "ordering": 1
+              }
+            ],
+            "property": "PlaySessions",
+            "table": "Roms"
+          },
+          "names": {
+            "human": "Rom",
+            "property": "Rom"
+          },
+          "type": "manyToOne"
+        },
+        {
+          "names": {
+            "human": "Start Date Time",
+            "property": "StartDateTime"
+          },
+          "type": "datetime"
+        }
+      ]
+    },
+    {
+      "keys": [
+        {
+          "key": "NormalizedFileName",
+          "ordering": 1
+        }
+      ],
+      "names": {
+        "entity": "Rom",
+        "human": "Rom",
+        "plural": "Roms",
+        "table": "Roms",
+        "url": "rom"
+      },
+      "properties": [
+        {
+          "names": {
+            "human": "File Name",
+            "property": "FileName"
+          },
+          "normalized": true,
+          "required": true,
+          "type": "string"
+        },
+        {
+          "foreign": {
+            "display": [
+              {
+                "ordering": 1,
+                "property": "NormalizedName"
+              }
+            ],
+            "entity": "GameConsole",
+            "keys": [
+              {
+                "key": "NormalizedName",
+                "ordering": 1
+              }
+            ],
+            "property": "Roms",
+            "table": "GameConsoles"
+          },
+          "names": {
+            "human": "Game Console",
+            "property": "GameConsole"
+          },
+          "type": "manyToOne"
+        },
+        {
+          "names": {
+            "human": "Is Test?",
+            "property": "IsTest"
+          },
+          "type": "boolean"
+        },
+        {
+          "foreign": {
+            "display": [
+              {
+                "ordering": 1,
+                "datetime": "StartDateTime"
+              }
+            ],
+            "entity": "PlaySession"
+          },
+          "names": {
+            "human": "Play Sessions",
+            "property": "PlaySessions"
+          },
+          "type": "oneToMany"
+        },
+        {
+          "alphanumeric": true,
+          "names": {
+            "human": "SHA256 Sum",
+            "property": "Sha256Sum"
+          },
+          "required": true,
+          "type": "string"
+        },
+        {
+          "foreign": {
+            "display": [
+              {
+                "ordering": 1,
+                "property": "NormalizedName"
+              }
+            ],
+            "entity": "WebSiteSubcategory",
+            "keys": [
+              {
+                "key": "NormalizedName",
+                "ordering": 1
+              }
+            ],
+            "property": "Roms",
+            "table": "WebSiteSubcategories"
+          },
+          "names": {
+            "human": "Web Site Subcategory",
+            "property": "WebSiteSubcategory"
+          },
+          "type": "manyToOne"
+        }
+      ]
+    },
+    {
+      "keys": [
+        {
+          "key": "NormalizedName",
+          "ordering": 1
+        }
+      ],
+      "names": {
+        "entity": "RomInput",
+        "human": "Rom Input",
+        "plural": "Rom Inputs",
+        "table": "RomInputs",
+        "url": "rom-input"
+      },
+      "properties": [
+        {
+          "names": {
+            "human": "Is Test?",
+            "property": "IsTest"
+          },
+          "type": "boolean"
+        },
+        {
+          "names": {
+            "human": "Name",
+            "property": "Name"
+          },
+          "normalized": true,
+          "required": true,
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "keys": [
+        {
+          "key": "NormalizedName",
+          "ordering": 1
+        }
+      ],
+      "names": {
+        "entity": "RomState",
+        "human": "Rom State",
+        "plural": "Rom States",
+        "table": "RomStates",
+        "url": "rom-state"
+      },
+      "properties": [
+        {
+          "names": {
+            "human": "Is Test?",
+            "property": "IsTest"
+          },
+          "type": "boolean"
+        },
+        {
+          "names": {
+            "human": "Name",
+            "property": "Name"
+          },
+          "normalized": true,
+          "required": true,
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "keys": [
+        {
+          "key": "NormalizedName",
+          "ordering": 1
+        }
+      ],
+      "names": {
+        "entity": "RomText",
+        "human": "Rom Text",
+        "plural": "Rom Texts",
+        "table": "RomTexts",
+        "url": "rom-text"
+      },
+      "properties": [
+        {
+          "names": {
+            "human": "Is Test?",
+            "property": "IsTest"
+          },
+          "type": "boolean"
+        },
+        {
+          "names": {
+            "human": "Name",
+            "property": "Name"
+          },
+          "normalized": true,
+          "required": true,
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "keys": [
+        {
+          "key": "NormalizedName",
+          "ordering": 1
+        }
+      ],
+      "names": {
+        "entity": "RomTransition",
+        "human": "Rom Transition",
+        "plural": "Rom Transitions",
+        "table": "RomTransitions",
+        "url": "rom-transition"
+      },
+      "properties": [
+        {
+          "names": {
+            "human": "Is Test?",
+            "property": "IsTest"
+          },
+          "type": "boolean"
+        },
+        {
+          "names": {
+            "human": "Name",
+            "property": "Name"
+          },
+          "normalized": true,
+          "required": true,
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "keys": [
+        {
+          "key": "NormalizedName",
+          "ordering": 1
+        }
+      ],
+      "names": {
+        "entity": "WebSite",
+        "human": "Web Site",
+        "plural": "Web Sites",
+        "table": "WebSites",
+        "url": "web-site"
+      },
+      "properties": [
+        {
+          "names": {
+            "human": "Is Test?",
+            "property": "IsTest"
+          },
+          "type": "boolean"
+        },
+        {
+          "names": {
+            "human": "Name",
+            "property": "Name"
+          },
+          "normalized": true,
+          "required": true,
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "keys": [
+        {
+          "key": "NormalizedName",
+          "ordering": 1
+        }
+      ],
+      "names": {
+        "entity": "WebSiteCategory",
+        "human": "WebSiteCategory",
+        "plural": "WebSiteCategories",
+        "table": "WebSiteCategories",
+        "url": "web-site-category"
+      },
+      "properties": [
+        {
+          "names": {
+            "human": "Is Test?",
+            "property": "IsTest"
+          },
+          "type": "boolean"
+        },
+        {
+          "names": {
+            "human": "Name",
+            "property": "Name"
+          },
+          "normalized": true,
+          "required": true,
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "keys": [
+        {
+          "key": "NormalizedName",
+          "ordering": 1
+        }
+      ],
+      "names": {
+        "entity": "WebSiteSubcategory",
+        "human": "WebSite Subcategory",
+        "plural": "WebSite Subcategories",
+        "table": "WebSiteSubcategories",
+        "url": "web-site-subcategory"
+      },
+      "properties": [
+        {
+          "names": {
+            "human": "Is Test?",
+            "property": "IsTest"
+          },
+          "type": "boolean"
+        },
+        {
+          "names": {
+            "human": "Name",
+            "property": "Name"
+          },
+          "normalized": true,
+          "required": true,
+          "type": "string"
+        },
+        {
+          "foreign": {
+            "display": [
+              {
+                "ordering": 1,
+                "property": "FileName"
+              }
+            ],
+            "entity": "Rom"
+          },
+          "names": {
+            "human": "Roms",
+            "property": "Roms"
+          },
+          "type": "oneToMany"
+        }
+      ]
+    }
+  ],
+  "names": {
+    "human": "Zelda Video Games",
+    "namespace": "Intrepion.VideoGames.Zelda"
+  },
+  "version": "0.1.0"
+}
