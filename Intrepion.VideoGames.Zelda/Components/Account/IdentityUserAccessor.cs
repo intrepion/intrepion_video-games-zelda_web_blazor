@@ -1,4 +1,4 @@
-﻿using Intrepion.VideoGames.Zelda.Data;
+﻿using Intrepion.VideoGames.Zelda.BusinessLogic.Entities;
 using Microsoft.AspNetCore.Identity;
 
 namespace Intrepion.VideoGames.Zelda.Components.Account;
