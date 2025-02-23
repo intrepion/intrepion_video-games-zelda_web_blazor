@@ -1,0 +1,86 @@
+@page "/admin/rom-state/add"
+@rendermode InteractiveServer
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject NavigationManager Navigation
+
+<PageTitle>Rom State Add</PageTitle>
+
+@if (RomState is not null)
+{
+  <RomStateForm Busy="Busy" 
+         RomState="RomState" 
+         IsAdd="true"
+         CancelRequest="Cancel"
+         ValidationResult="@(async (success) => await ValidationResultAsync(success))" />
+}
+
+@if (Success)
+{
+  <br />
+  <div class="alert alert-success">The Rom State was successfully added.</div>
+}
+
+@if (Error)
+{
+  <br />
+  <div class="alert alert-danger">Failed to add the Rom State (@ErrorMessage).</div>
+}
+
+@code {
+  private RomState? RomState { get; set; }
+
+  private bool Busy;
+
+  private bool Success;
+
+  private bool Error;
+
+  private string ErrorMessage = string.Empty;
+
+  protected override void OnInitialized()
+  {
+    RomState = new();
+  }
+
+  private async Task ValidationResultAsync(bool success)
+  {
+    if (Busy)
+    {
+      return;
+    }
+
+    if (!success)
+    {
+      Success = false;
+      Error = false;
+      return;
+    }
+
+    Busy = true;
+
+    using var context = DbFactory.CreateDbContext();
+
+    if (RomState is not null)
+    {
+      context.RomStates?.Add(RomState);
+    }
+
+    try
+    {
+      await context.SaveChangesAsync();
+      Success = true;
+      Error = false;
+
+      Navigation.NavigateTo($"/admin/rom-state/view/{RomState?.Id}");
+    }
+    catch (Exception ex)
+    {
+      Success = false;
+      Error = true;
+      ErrorMessage = ex.Message;
+      Busy = false;
+    }
+  }
+
+  private void Cancel() => Navigation.NavigateTo($"/admin/rom-state");
+}

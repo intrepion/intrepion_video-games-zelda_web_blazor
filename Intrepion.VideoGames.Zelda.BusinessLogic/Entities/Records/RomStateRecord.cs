@@ -1,0 +1,8 @@
+﻿namespace Intrepion.VideoGames.Zelda.BusinessLogic.Entities.Records;
+
+public class RomStateRecord
+{
+    public bool IsTest { get; set; }
+    public string Name { get; set; } = string.Empty;
+    // RecordPropertyCodePlaceholder
+}
