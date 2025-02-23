@@ -1,0 +1,146 @@
+@page "/admin/emulator-core/edit/{EmulatorCoreId:guid}"
+@rendermode InteractiveServer
+@implements IDisposable
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject NavigationManager Navigation
+@inject EditSuccess EditSuccessState
+
+<PageTitle>Emulator Core Edit</PageTitle>
+
+@if (EmulatorCore is null && !Busy)
+{
+  <p>Could not find Emulator Core with id @EmulatorCoreId.</p>
+}
+else
+{
+  <EmulatorCoreForm Busy="Busy" 
+         EmulatorCore="EmulatorCore" 
+         DbEmulatorCore="DbEmulatorCore" 
+         IsAdd="false" 
+         CancelRequest="Cancel" 
+         ValidationResult="@(async (success) => await ValidationResultAsync(success))" />
+}
+
+@if (ConcurrencyError)
+{
+  <br />
+  <div class="alert alert-danger">
+    <p>
+      The Emulator Core details have changed since it was last loaded. The updated fields are highlighted in the form.
+      Please choose an option:
+    </p>
+    <p><b>Cancel</b> to lose your changes and keep the database version.</p>
+    <p><b>Submit</b> to force an update with your version.</p>
+  </div>
+}
+
+@if (Error)
+{
+  <br />
+  <div class="alert alert-danger">Failed to update the Emulator Core (@ErrorMessage).</div>
+}
+
+@code {
+  [Parameter]
+  public Guid EmulatorCoreId { get; set; }
+
+  private ApplicationDbContext? Context { get; set; }
+
+  private EmulatorCore EmulatorCore { get; set; } = new EmulatorCore();
+
+  private EmulatorCore DbEmulatorCore { get; set; } = new EmulatorCore();
+
+  private bool Busy;
+
+  private bool Error;
+
+  private bool ConcurrencyError;
+
+  private string ErrorMessage = string.Empty;
+
+  protected override async Task OnInitializedAsync()
+  {
+    Busy = true;
+
+    try
+    {
+      Context = DbFactory.CreateDbContext();
+
+      if (Context is not null && Context.EmulatorCores is not null)
+      {
+        var emulatorCore = await Context.EmulatorCores.SingleOrDefaultAsync(x => x.Id == EmulatorCoreId);
+
+        if (emulatorCore is not null)
+        {
+          EmulatorCore = emulatorCore;
+        }
+      }
+    }
+    finally
+    {
+      Busy = false;
+    }
+  }
+
+  private async Task ValidationResultAsync(bool success)
+  {
+    if (Busy)
+    {
+      return;
+    }
+
+    if (!success)
+    {
+      Error = false;
+      ConcurrencyError = false;
+      return;
+    }
+
+    Busy = true;
+    try
+    {
+      if (Context is not null)
+      {
+        await Context.SaveChangesAsync();
+      }
+
+      EditSuccessState.Success = true;
+      Navigation.NavigateTo($"/admin/emulator-core/view/{EmulatorCore.Id}");
+    }
+    catch (DbUpdateConcurrencyException dbex)
+    {
+      EditSuccessState.Success = false;
+
+      ConcurrencyError = true;
+
+      var dbValues = dbex.Entries[0].GetDatabaseValues();
+
+      if (dbValues is null)
+      {
+        Navigation.NavigateTo($"/admin/emulator-core/view/{EmulatorCore.Id}");
+        return;
+      }
+
+      DbEmulatorCore = (EmulatorCore)dbValues.ToObject();
+
+      dbex.Entries[0].OriginalValues.SetValues(dbValues);
+      Error = false;
+      Busy = false;
+    }
+    catch (Exception ex)
+    {
+      EditSuccessState.Success = false;
+      Error = true;
+      ErrorMessage = ex.Message;
+      Busy = false;
+    }
+  }
+
+  private void Cancel()
+  {
+    Busy = true;
+    Navigation.NavigateTo($"/admin/emulator-core");
+  }
+
+  public void Dispose() => Context?.Dispose();
+}
