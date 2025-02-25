@@ -51,7 +51,7 @@ public static class RomTransitionImporter
             // ManyToOneCodePlaceholder
 
             if (true
-                // NullCheckCodePlaceholder
+            // NullCheckCodePlaceholder
             )
             {
                 var romTransition = new RomTransition

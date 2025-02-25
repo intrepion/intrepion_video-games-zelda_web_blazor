@@ -51,7 +51,7 @@ public static class EmulatorImporter
             // ManyToOneCodePlaceholder
 
             if (true
-                // NullCheckCodePlaceholder
+            // NullCheckCodePlaceholder
             )
             {
                 var emulator = new Emulator
