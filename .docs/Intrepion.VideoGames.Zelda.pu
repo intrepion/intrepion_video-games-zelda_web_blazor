@@ -1,0 +1,172 @@
+@startuml
+
+entity Company {
+    Id : Guid
+    --
+    GameConsoles : ICollection<GameConsole>
+    ' CompanyKeyCodePlaceholder
+    --
+    IsTest : bool
+    Name : string
+    ' CompanyPropertyCodePlaceholder
+}
+
+entity Emulator {
+    Id : Guid
+    --
+    EmulatorCores : ICollection<EmulatorCore>
+    ' EmulatorKeyCodePlaceholder
+    --
+    IsTest : bool
+    Name : string
+    ' EmulatorPropertyCodePlaceholder
+}
+
+entity EmulatorCore {
+    Id : Guid
+    --
+    Emulator : Emulator
+    PlaySessions : ICollection<PlaySession>
+    ' EmulatorCoreKeyCodePlaceholder
+    --
+    IsTest : bool
+    Name : string
+    ' EmulatorCorePropertyCodePlaceholder
+}
+
+entity GameConsole {
+    Id : Guid
+    --
+    Company : Company
+    Roms : ICollection<Rom>
+    ' GameConsoleKeyCodePlaceholder
+    --
+    IsTest : bool
+    Name : string
+    ' GameConsolePropertyCodePlaceholder
+}
+
+entity Language {
+    Id : Guid
+    --
+    ' LanguageKeyCodePlaceholder
+    --
+    IsTest : bool
+    Name : string
+    ' LanguagePropertyCodePlaceholder
+}
+
+entity PlaySession {
+    Id : Guid
+    --
+    EmulatorCore : EmulatorCore
+    Rom : Rom
+    ' PlaySessionKeyCodePlaceholder
+    --
+    EndDateTime : DateTime
+    IsTest : bool
+    StartDateTime : DateTime
+    ' PlaySessionPropertyCodePlaceholder
+}
+
+entity Rom {
+    Id : Guid
+    --
+    GameConsole : GameConsole
+    PlaySessions : ICollection<PlaySession>
+    WebSite : WebSite
+    WebSiteSubcategory : WebSiteSubcategory
+    ' RomKeyCodePlaceholder
+    --
+    FileName : string
+    IsTest : bool
+    Sha256Sum : string
+    ' RomPropertyCodePlaceholder
+}
+
+entity RomInput {
+    Id : Guid
+    --
+    ' RomInputKeyCodePlaceholder
+    --
+    IsTest : bool
+    Name : string
+    ' RomInputPropertyCodePlaceholder
+}
+
+entity RomState {
+    Id : Guid
+    --
+    ' RomStateKeyCodePlaceholder
+    --
+    IsTest : bool
+    Name : string
+    ' RomStatePropertyCodePlaceholder
+}
+
+entity RomText {
+    Id : Guid
+    --
+    ' RomTextKeyCodePlaceholder
+    --
+    IsTest : bool
+    Name : string
+    Text : string
+    ' RomTextPropertyCodePlaceholder
+}
+
+entity RomTransition {
+    Id : Guid
+    --
+    ' RomTransitionKeyCodePlaceholder
+    --
+    IsTest : bool
+    Name : string
+    ' RomTransitionPropertyCodePlaceholder
+}
+
+entity WebSite {
+    Id : Guid
+    --
+    Roms : ICollection<Rom>
+    ' WebSiteKeyCodePlaceholder
+    --
+    IsTest : bool
+    Name : string
+    Url : string
+    ' WebSitePropertyCodePlaceholder
+}
+
+entity WebSiteCategory {
+    Id : Guid
+    --
+    ' WebSiteCategoryKeyCodePlaceholder
+    --
+    IsTest : bool
+    Name : string
+    ' WebSiteCategoryPropertyCodePlaceholder
+}
+
+entity WebSiteSubcategory {
+    Id : Guid
+    --
+    Roms : ICollection<Rom>
+    ' WebSiteSubcategoryKeyCodePlaceholder
+    --
+    IsTest : bool
+    Name : string
+    ' WebSiteSubcategoryPropertyCodePlaceholder
+}
+
+' EntityCodePlaceholder
+
+EmulatorCore }o--o| Emulator
+GameConsole }o--o| Company
+PlaySession }o--o| EmulatorCore
+PlaySession }o--o| Rom
+Rom }o--o| GameConsole
+Rom }o--o| WebSite
+Rom }o--o| WebSiteSubcategory
+' RelationshipCodePlaceholder
+
+@enduml
