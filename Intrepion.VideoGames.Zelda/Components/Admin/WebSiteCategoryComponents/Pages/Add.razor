@@ -1,0 +1,86 @@
+@page "/admin/web-site-category/add"
+@rendermode InteractiveServer
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject NavigationManager Navigation
+
+<PageTitle>WebSiteCategory Add</PageTitle>
+
+@if (WebSiteCategory is not null)
+{
+  <WebSiteCategoryForm Busy="Busy" 
+         WebSiteCategory="WebSiteCategory" 
+         IsAdd="true"
+         CancelRequest="Cancel"
+         ValidationResult="@(async (success) => await ValidationResultAsync(success))" />
+}
+
+@if (Success)
+{
+  <br />
+  <div class="alert alert-success">The WebSiteCategory was successfully added.</div>
+}
+
+@if (Error)
+{
+  <br />
+  <div class="alert alert-danger">Failed to add the WebSiteCategory (@ErrorMessage).</div>
+}
+
+@code {
+  private WebSiteCategory? WebSiteCategory { get; set; }
+
+  private bool Busy;
+
+  private bool Success;
+
+  private bool Error;
+
+  private string ErrorMessage = string.Empty;
+
+  protected override void OnInitialized()
+  {
+    WebSiteCategory = new();
+  }
+
+  private async Task ValidationResultAsync(bool success)
+  {
+    if (Busy)
+    {
+      return;
+    }
+
+    if (!success)
+    {
+      Success = false;
+      Error = false;
+      return;
+    }
+
+    Busy = true;
+
+    using var context = DbFactory.CreateDbContext();
+
+    if (WebSiteCategory is not null)
+    {
+      context.WebSiteCategories?.Add(WebSiteCategory);
+    }
+
+    try
+    {
+      await context.SaveChangesAsync();
+      Success = true;
+      Error = false;
+
+      Navigation.NavigateTo($"/admin/web-site-category/view/{WebSiteCategory?.Id}");
+    }
+    catch (Exception ex)
+    {
+      Success = false;
+      Error = true;
+      ErrorMessage = ex.Message;
+      Busy = false;
+    }
+  }
+
+  private void Cancel() => Navigation.NavigateTo($"/admin/web-site-category");
+}

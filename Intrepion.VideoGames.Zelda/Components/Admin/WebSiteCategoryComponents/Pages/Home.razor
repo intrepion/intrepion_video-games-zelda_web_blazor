@@ -1,0 +1,79 @@
+@page "/admin/web-site-category"
+@rendermode InteractiveServer
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject NavigationManager Navigation
+
+<PageTitle>WebSiteCategory Home</PageTitle>
+
+<h1>WebSiteCategory Home</h1>
+<h6><a href="/admin/web-site-category/add">Create New</a></h6>
+
+<div class="container-fluid">
+  <table class="table table-hover table-primary table-striped">
+    <thead>
+      <tr>
+        <th>Actions</th>
+        <th>Is Test?</th>
+        <th>Name</th>
+        @* TableHeaderCodePlaceholder *@
+      </tr>
+    </thead>
+    <tbody>
+      @if (webSiteCategories is not null)
+      {
+        @foreach (var webSiteCategory in webSiteCategories)
+        {
+          <tr>
+            <td>
+              <div class="btn-group">
+                <a class="btn btn-primary btn-sm btn-info" href="/admin/web-site-category/view/@webSiteCategory.Id" title="View">
+                  <i class="bi bi-eye"></i>
+                </a>
+                <a class="btn btn-primary btn-sm" href="/admin/web-site-category/edit/@webSiteCategory.Id" title="Edit">
+                  <i class="bi bi-pencil"></i>
+                </a>
+              </div>
+            </td>
+            <td>
+              @if (webSiteCategory is not null && webSiteCategory.IsTest)
+              {
+                <span class="badge bg-success">Yes</span>
+              }
+              else
+              {
+                <span class="badge bg-warning text-dark">No</span>
+              }
+            </td>
+            <td>@webSiteCategory?.Name</td>
+            @* TableRowCodePlaceholder *@
+          </tr>
+        }
+      }
+    </tbody>
+  </table>
+</div>
+
+@code {
+  private ICollection<WebSiteCategory>? webSiteCategories { get; set; }
+
+  protected override async Task OnParametersSetAsync()
+  {
+    await ReloadAsync();
+  }
+
+  private async Task ReloadAsync()
+  {
+    webSiteCategories = new List<WebSiteCategory>();
+
+    using var context = DbFactory.CreateDbContext();
+    var query = context.WebSiteCategories?.AsQueryable();
+
+    if (query is not null)
+    {
+      webSiteCategories = await query
+        @* QueryIncludeCodePlaceholder *@
+        .AsNoTracking().ToListAsync();
+    }
+  }
+}
+
