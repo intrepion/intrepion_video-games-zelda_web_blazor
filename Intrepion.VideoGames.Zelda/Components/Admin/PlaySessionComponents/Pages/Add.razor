@@ -1,0 +1,86 @@
+@page "/admin/play-session/add"
+@rendermode InteractiveServer
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject NavigationManager Navigation
+
+<PageTitle>Play Session Add</PageTitle>
+
+@if (PlaySession is not null)
+{
+  <PlaySessionForm Busy="Busy" 
+         PlaySession="PlaySession" 
+         IsAdd="true"
+         CancelRequest="Cancel"
+         ValidationResult="@(async (success) => await ValidationResultAsync(success))" />
+}
+
+@if (Success)
+{
+  <br />
+  <div class="alert alert-success">The Play Session was successfully added.</div>
+}
+
+@if (Error)
+{
+  <br />
+  <div class="alert alert-danger">Failed to add the Play Session (@ErrorMessage).</div>
+}
+
+@code {
+  private PlaySession? PlaySession { get; set; }
+
+  private bool Busy;
+
+  private bool Success;
+
+  private bool Error;
+
+  private string ErrorMessage = string.Empty;
+
+  protected override void OnInitialized()
+  {
+    PlaySession = new();
+  }
+
+  private async Task ValidationResultAsync(bool success)
+  {
+    if (Busy)
+    {
+      return;
+    }
+
+    if (!success)
+    {
+      Success = false;
+      Error = false;
+      return;
+    }
+
+    Busy = true;
+
+    using var context = DbFactory.CreateDbContext();
+
+    if (PlaySession is not null)
+    {
+      context.PlaySessions?.Add(PlaySession);
+    }
+
+    try
+    {
+      await context.SaveChangesAsync();
+      Success = true;
+      Error = false;
+
+      Navigation.NavigateTo($"/admin/play-session/view/{PlaySession?.Id}");
+    }
+    catch (Exception ex)
+    {
+      Success = false;
+      Error = true;
+      ErrorMessage = ex.Message;
+      Busy = false;
+    }
+  }
+
+  private void Cancel() => Navigation.NavigateTo($"/admin/play-session");
+}

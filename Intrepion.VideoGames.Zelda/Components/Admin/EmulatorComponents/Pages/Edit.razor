@@ -1,0 +1,146 @@
+@page "/admin/emulator/edit/{EmulatorId:guid}"
+@rendermode InteractiveServer
+@implements IDisposable
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject NavigationManager Navigation
+@inject EditSuccess EditSuccessState
+
+<PageTitle>Emulator Edit</PageTitle>
+
+@if (Emulator is null && !Busy)
+{
+  <p>Could not find Emulator with id @EmulatorId.</p>
+}
+else
+{
+  <EmulatorForm Busy="Busy" 
+         Emulator="Emulator" 
+         DbEmulator="DbEmulator" 
+         IsAdd="false" 
+         CancelRequest="Cancel" 
+         ValidationResult="@(async (success) => await ValidationResultAsync(success))" />
+}
+
+@if (ConcurrencyError)
+{
+  <br />
+  <div class="alert alert-danger">
+    <p>
+      The Emulator details have changed since it was last loaded. The updated fields are highlighted in the form.
+      Please choose an option:
+    </p>
+    <p><b>Cancel</b> to lose your changes and keep the database version.</p>
+    <p><b>Submit</b> to force an update with your version.</p>
+  </div>
+}
+
+@if (Error)
+{
+  <br />
+  <div class="alert alert-danger">Failed to update the Emulator (@ErrorMessage).</div>
+}
+
+@code {
+  [Parameter]
+  public Guid EmulatorId { get; set; }
+
+  private ApplicationDbContext? Context { get; set; }
+
+  private Emulator Emulator { get; set; } = new Emulator();
+
+  private Emulator DbEmulator { get; set; } = new Emulator();
+
+  private bool Busy;
+
+  private bool Error;
+
+  private bool ConcurrencyError;
+
+  private string ErrorMessage = string.Empty;
+
+  protected override async Task OnInitializedAsync()
+  {
+    Busy = true;
+
+    try
+    {
+      Context = DbFactory.CreateDbContext();
+
+      if (Context is not null && Context.Emulators is not null)
+      {
+        var emulator = await Context.Emulators.SingleOrDefaultAsync(x => x.Id == EmulatorId);
+
+        if (emulator is not null)
+        {
+          Emulator = emulator;
+        }
+      }
+    }
+    finally
+    {
+      Busy = false;
+    }
+  }
+
+  private async Task ValidationResultAsync(bool success)
+  {
+    if (Busy)
+    {
+      return;
+    }
+
+    if (!success)
+    {
+      Error = false;
+      ConcurrencyError = false;
+      return;
+    }
+
+    Busy = true;
+    try
+    {
+      if (Context is not null)
+      {
+        await Context.SaveChangesAsync();
+      }
+
+      EditSuccessState.Success = true;
+      Navigation.NavigateTo($"/admin/emulator/view/{Emulator.Id}");
+    }
+    catch (DbUpdateConcurrencyException dbex)
+    {
+      EditSuccessState.Success = false;
+
+      ConcurrencyError = true;
+
+      var dbValues = dbex.Entries[0].GetDatabaseValues();
+
+      if (dbValues is null)
+      {
+        Navigation.NavigateTo($"/admin/emulator/view/{Emulator.Id}");
+        return;
+      }
+
+      DbEmulator = (Emulator)dbValues.ToObject();
+
+      dbex.Entries[0].OriginalValues.SetValues(dbValues);
+      Error = false;
+      Busy = false;
+    }
+    catch (Exception ex)
+    {
+      EditSuccessState.Success = false;
+      Error = true;
+      ErrorMessage = ex.Message;
+      Busy = false;
+    }
+  }
+
+  private void Cancel()
+  {
+    Busy = true;
+    Navigation.NavigateTo($"/admin/emulator");
+  }
+
+  public void Dispose() => Context?.Dispose();
+}

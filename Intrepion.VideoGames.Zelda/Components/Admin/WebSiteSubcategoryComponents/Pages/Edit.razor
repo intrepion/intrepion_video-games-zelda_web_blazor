@@ -1,0 +1,146 @@
+@page "/admin/web-site-subcategory/edit/{WebSiteSubcategoryId:guid}"
+@rendermode InteractiveServer
+@implements IDisposable
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject NavigationManager Navigation
+@inject EditSuccess EditSuccessState
+
+<PageTitle>WebSite Subcategory Edit</PageTitle>
+
+@if (WebSiteSubcategory is null && !Busy)
+{
+  <p>Could not find WebSite Subcategory with id @WebSiteSubcategoryId.</p>
+}
+else
+{
+  <WebSiteSubcategoryForm Busy="Busy" 
+         WebSiteSubcategory="WebSiteSubcategory" 
+         DbWebSiteSubcategory="DbWebSiteSubcategory" 
+         IsAdd="false" 
+         CancelRequest="Cancel" 
+         ValidationResult="@(async (success) => await ValidationResultAsync(success))" />
+}
+
+@if (ConcurrencyError)
+{
+  <br />
+  <div class="alert alert-danger">
+    <p>
+      The WebSite Subcategory details have changed since it was last loaded. The updated fields are highlighted in the form.
+      Please choose an option:
+    </p>
+    <p><b>Cancel</b> to lose your changes and keep the database version.</p>
+    <p><b>Submit</b> to force an update with your version.</p>
+  </div>
+}
+
+@if (Error)
+{
+  <br />
+  <div class="alert alert-danger">Failed to update the WebSite Subcategory (@ErrorMessage).</div>
+}
+
+@code {
+  [Parameter]
+  public Guid WebSiteSubcategoryId { get; set; }
+
+  private ApplicationDbContext? Context { get; set; }
+
+  private WebSiteSubcategory WebSiteSubcategory { get; set; } = new WebSiteSubcategory();
+
+  private WebSiteSubcategory DbWebSiteSubcategory { get; set; } = new WebSiteSubcategory();
+
+  private bool Busy;
+
+  private bool Error;
+
+  private bool ConcurrencyError;
+
+  private string ErrorMessage = string.Empty;
+
+  protected override async Task OnInitializedAsync()
+  {
+    Busy = true;
+
+    try
+    {
+      Context = DbFactory.CreateDbContext();
+
+      if (Context is not null && Context.WebSiteSubcategories is not null)
+      {
+        var webSiteSubcategory = await Context.WebSiteSubcategories.SingleOrDefaultAsync(x => x.Id == WebSiteSubcategoryId);
+
+        if (webSiteSubcategory is not null)
+        {
+          WebSiteSubcategory = webSiteSubcategory;
+        }
+      }
+    }
+    finally
+    {
+      Busy = false;
+    }
+  }
+
+  private async Task ValidationResultAsync(bool success)
+  {
+    if (Busy)
+    {
+      return;
+    }
+
+    if (!success)
+    {
+      Error = false;
+      ConcurrencyError = false;
+      return;
+    }
+
+    Busy = true;
+    try
+    {
+      if (Context is not null)
+      {
+        await Context.SaveChangesAsync();
+      }
+
+      EditSuccessState.Success = true;
+      Navigation.NavigateTo($"/admin/web-site-subcategory/view/{WebSiteSubcategory.Id}");
+    }
+    catch (DbUpdateConcurrencyException dbex)
+    {
+      EditSuccessState.Success = false;
+
+      ConcurrencyError = true;
+
+      var dbValues = dbex.Entries[0].GetDatabaseValues();
+
+      if (dbValues is null)
+      {
+        Navigation.NavigateTo($"/admin/web-site-subcategory/view/{WebSiteSubcategory.Id}");
+        return;
+      }
+
+      DbWebSiteSubcategory = (WebSiteSubcategory)dbValues.ToObject();
+
+      dbex.Entries[0].OriginalValues.SetValues(dbValues);
+      Error = false;
+      Busy = false;
+    }
+    catch (Exception ex)
+    {
+      EditSuccessState.Success = false;
+      Error = true;
+      ErrorMessage = ex.Message;
+      Busy = false;
+    }
+  }
+
+  private void Cancel()
+  {
+    Busy = true;
+    Navigation.NavigateTo($"/admin/web-site-subcategory");
+  }
+
+  public void Dispose() => Context?.Dispose();
+}
