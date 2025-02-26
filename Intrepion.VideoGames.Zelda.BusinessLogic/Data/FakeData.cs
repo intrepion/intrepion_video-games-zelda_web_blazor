@@ -1,5 +1,5 @@
-﻿using Intrepion.VideoGames.Zelda.BusinessLogic.Entities;
-using Bogus;
+﻿using Bogus;
+using Intrepion.VideoGames.Zelda.BusinessLogic.Entities;
 
 namespace Intrepion.VideoGames.Zelda.BusinessLogic.Data;
 
