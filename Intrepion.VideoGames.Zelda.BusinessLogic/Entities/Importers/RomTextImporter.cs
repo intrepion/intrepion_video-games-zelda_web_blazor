@@ -58,7 +58,7 @@ public static class RomTextImporter
 
             if (true
                 && romState is not null
-                // NullCheckCodePlaceholder
+            // NullCheckCodePlaceholder
             )
             {
                 var romText = new RomText
