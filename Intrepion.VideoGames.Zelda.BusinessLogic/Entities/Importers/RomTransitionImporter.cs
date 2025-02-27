@@ -72,7 +72,7 @@ public static class RomTransitionImporter
                 && previousRomState is not null
                 && romInput is not null
                 && romState is not null
-                // NullCheckCodePlaceholder
+            // NullCheckCodePlaceholder
             )
             {
                 var romTransition = new RomTransition
