@@ -21,6 +21,23 @@
                 <InputText @bind-Value="EmulatorCore.Name" @oninput="HandleNameChange"/>
             </label>
         </p>
+        
+        <h2>Emulator</h2>
+        <p>
+            <label>
+                Emulator:
+                <InputSelect @bind-Value="SelectedEmulatorId" @oninput="HandleEmulatorChange">
+                    <option value="">-- Select Emulator --</option>
+                    @if (EmulatorList != null)
+                    {
+                        @foreach (var emulator in EmulatorList)
+                        {
+                            <option value="@emulator.Id">@emulator.Name</option>
+                        }
+                    }
+                </InputSelect>
+            </label>
+        </p>
         @* PropertyFormCodePlaceholder *@
 
         <br />
@@ -51,8 +68,22 @@
 
     [Parameter]
     public bool Busy { get; set; }
+    
+    [Parameter]
+    public List<Emulator>? EmulatorList { get; set; }
 
     private string Mode => IsAdd ? "Add" : "Edit";
+    
+    private Guid SelectedEmulatorId;
+
+    protected override void OnInitialized()
+    {
+        // Initialize the selected emulator ID if it exists
+        if (EmulatorCore?.Emulator != null && !IsAdd)
+        {
+            SelectedEmulatorId = EmulatorCore.Emulator.Id;
+        }
+    }
 
     private async Task CancelAsync() => await CancelRequest.InvokeAsync(null);
 
@@ -65,7 +96,36 @@
 
     private void HandleNameChange(ChangeEventArgs changeEventArgs)
     {
+        if (EmulatorCore != null && changeEventArgs.Value != null)
+        {
+            string stringValue = changeEventArgs.Value.ToString() ?? string.Empty;
+
+            EmulatorCore.NormalizedName = stringValue.ToUpperInvariant();
+        }
+
         // SpecializedCodeNamePlaceholder
+    }
+    
+    private void HandleEmulatorChange(ChangeEventArgs changeEventArgs)
+    {
+        if (EmulatorCore != null && changeEventArgs.Value != null)
+        {
+            string stringValue = changeEventArgs.Value.ToString() ?? string.Empty;
+            
+            if (Guid.TryParse(stringValue, out Guid emulatorId))
+            {
+                if (emulatorId == Guid.Empty)
+                {
+                    EmulatorCore.Emulator = null;
+                }
+                else if (EmulatorList != null)
+                {
+                    EmulatorCore.Emulator = EmulatorList.FirstOrDefault(e => e.Id == emulatorId);
+                }
+            }
+        }
+
+        // SpecializedCodeEmulatorPlaceholder
     }
 
     // HandleChangeCodePlaceholder

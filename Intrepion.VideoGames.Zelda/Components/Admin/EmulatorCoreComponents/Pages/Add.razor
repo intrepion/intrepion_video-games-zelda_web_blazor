@@ -11,6 +11,7 @@
          EmulatorCore="EmulatorCore" 
          IsAdd="true"
          CancelRequest="Cancel"
+         EmulatorList="EmulatorList"
          ValidationResult="@(async (success) => await ValidationResultAsync(success))" />
 }
 
@@ -28,6 +29,9 @@
 
 @code {
   private EmulatorCore? EmulatorCore { get; set; }
+  
+  // Add a list to store the emulators for the dropdown
+  private List<Emulator>? EmulatorList { get; set; }
 
   private bool Busy;
 
@@ -37,8 +41,21 @@
 
   private string ErrorMessage = string.Empty;
 
-  protected override void OnInitialized()
+  protected override async Task OnInitializedAsync()
   {
+    // Create new context to load emulators
+    using var context = DbFactory.CreateDbContext();
+    
+    // Load emulators for the dropdown
+    if (context.Emulators != null)
+    {
+      EmulatorList = await context.Emulators.OrderBy(e => e.Name).ToListAsync();
+    }
+    else
+    {
+      EmulatorList = new List<Emulator>();
+    }
+    
     EmulatorCore = new();
   }
 
@@ -62,6 +79,17 @@
 
     if (EmulatorCore is not null)
     {
+      // If EmulatorCore has a selected Emulator reference, we need to attach it properly
+      if (EmulatorCore.Emulator != null && EmulatorCore.Emulator.Id != Guid.Empty)
+      {
+        // Avoid duplicate entity tracking by getting a reference to the existing emulator
+        var existingEmulator = await context.Emulators.FindAsync(EmulatorCore.Emulator.Id);
+        if (existingEmulator != null)
+        {
+          EmulatorCore.Emulator = existingEmulator;
+        }
+      }
+      
       context.EmulatorCores?.Add(EmulatorCore);
     }
 

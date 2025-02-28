@@ -18,6 +18,7 @@ else
          DbEmulatorCore="DbEmulatorCore" 
          IsAdd="false" 
          CancelRequest="Cancel" 
+         EmulatorList="EmulatorList"
          ValidationResult="@(async (success) => await ValidationResultAsync(success))" />
 }
 
@@ -49,6 +50,9 @@ else
   private EmulatorCore EmulatorCore { get; set; } = new EmulatorCore();
 
   private EmulatorCore DbEmulatorCore { get; set; } = new EmulatorCore();
+  
+  // Add a list to store the emulators for the dropdown
+  private List<Emulator>? EmulatorList { get; set; }
 
   private bool Busy;
 
@@ -66,9 +70,22 @@ else
     {
       Context = DbFactory.CreateDbContext();
 
+      // Load emulators for the dropdown
+      if (Context.Emulators != null)
+      {
+        EmulatorList = await Context.Emulators.OrderBy(e => e.Name).ToListAsync();
+      }
+      else
+      {
+        EmulatorList = new List<Emulator>();
+      }
+
       if (Context is not null && Context.EmulatorCores is not null)
       {
-        var emulatorCore = await Context.EmulatorCores.SingleOrDefaultAsync(x => x.Id == EmulatorCoreId);
+        // Include the Emulator navigation property when loading the EmulatorCore
+        var emulatorCore = await Context.EmulatorCores
+            .Include(e => e.Emulator)
+            .SingleOrDefaultAsync(x => x.Id == EmulatorCoreId);
 
         if (emulatorCore is not null)
         {
@@ -101,6 +118,17 @@ else
     {
       if (Context is not null)
       {
+        // If the Emulator navigation property has changed, handle it correctly
+        if (EmulatorCore.Emulator != null && EmulatorCore.Emulator.Id != Guid.Empty)
+        {
+          var existingEmulator = await Context.Emulators.FindAsync(EmulatorCore.Emulator.Id);
+          if (existingEmulator != null)
+          {
+            // Update the navigation property to use the tracked entity
+            EmulatorCore.Emulator = existingEmulator;
+          }
+        }
+        
         await Context.SaveChangesAsync();
       }
 
