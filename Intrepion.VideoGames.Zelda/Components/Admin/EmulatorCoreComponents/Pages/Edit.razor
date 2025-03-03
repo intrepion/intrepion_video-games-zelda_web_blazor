@@ -3,7 +3,6 @@
 @implements IDisposable
 @inject IDbContextFactory<ApplicationDbContext> DbFactory
 @inject NavigationManager Navigation
-@inject EditSuccess EditSuccessState
 
 <PageTitle>Emulator Core Edit</PageTitle>
 
@@ -14,25 +13,12 @@
 else
 {
   <EmulatorCoreForm Busy="Busy" 
-         EmulatorCore="EmulatorCore" 
-         DbEmulatorCore="DbEmulatorCore" 
-         IsAdd="false" 
          CancelRequest="Cancel" 
+         DbEmulatorCore="DbEmulatorCore" 
+         EmulatorCore="EmulatorCore" 
          EmulatorList="EmulatorList"
+         IsAdd="false" 
          ValidationResult="@(async (success) => await ValidationResultAsync(success))" />
-}
-
-@if (ConcurrencyError)
-{
-  <br />
-  <div class="alert alert-danger">
-    <p>
-      The Emulator Core details have changed since it was last loaded. The updated fields are highlighted in the form.
-      Please choose an option:
-    </p>
-    <p><b>Cancel</b> to lose your changes and keep the database version.</p>
-    <p><b>Submit</b> to force an update with your version.</p>
-  </div>
 }
 
 @if (Error)
@@ -57,8 +43,6 @@ else
   private bool Busy;
 
   private bool Error;
-
-  private bool ConcurrencyError;
 
   private string ErrorMessage = string.Empty;
 
@@ -109,11 +93,13 @@ else
     if (!success)
     {
       Error = false;
-      ConcurrencyError = false;
       return;
     }
 
     Busy = true;
+
+    using var context = DbFactory.CreateDbContext();
+
     try
     {
       if (Context is not null)
@@ -132,15 +118,10 @@ else
         await Context.SaveChangesAsync();
       }
 
-      EditSuccessState.Success = true;
       Navigation.NavigateTo($"/admin/emulator-core/view/{EmulatorCore.Id}");
     }
     catch (DbUpdateConcurrencyException dbex)
     {
-      EditSuccessState.Success = false;
-
-      ConcurrencyError = true;
-
       var dbValues = dbex.Entries[0].GetDatabaseValues();
 
       if (dbValues is null)
@@ -157,7 +138,6 @@ else
     }
     catch (Exception ex)
     {
-      EditSuccessState.Success = false;
       Error = true;
       ErrorMessage = ex.Message;
       Busy = false;

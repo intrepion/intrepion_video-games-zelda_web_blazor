@@ -1,5 +1,6 @@
 @page "/admin/emulator-core/add"
 @rendermode InteractiveServer
+@implements IDisposable
 @inject IDbContextFactory<ApplicationDbContext> DbFactory
 @inject NavigationManager Navigation
 
@@ -8,17 +9,11 @@
 @if (EmulatorCore is not null)
 {
   <EmulatorCoreForm Busy="Busy" 
-         EmulatorCore="EmulatorCore" 
-         IsAdd="true"
          CancelRequest="Cancel"
+         EmulatorCore="EmulatorCore" 
          EmulatorList="EmulatorList"
+         IsAdd="true"
          ValidationResult="@(async (success) => await ValidationResultAsync(success))" />
-}
-
-@if (Success)
-{
-  <br />
-  <div class="alert alert-success">The Emulator Core was successfully added.</div>
 }
 
 @if (Error)
@@ -28,6 +23,8 @@
 }
 
 @code {
+  private ApplicationDbContext? Context { get; set; }
+
   private EmulatorCore? EmulatorCore { get; set; }
   
   // Add a list to store the emulators for the dropdown
@@ -35,21 +32,17 @@
 
   private bool Busy;
 
-  private bool Success;
-
   private bool Error;
 
   private string ErrorMessage = string.Empty;
 
   protected override async Task OnInitializedAsync()
   {
-    // Create new context to load emulators
-    using var context = DbFactory.CreateDbContext();
+    Context = DbFactory.CreateDbContext();
     
-    // Load emulators for the dropdown
-    if (context.Emulators != null)
+    if (Context.Emulators != null)
     {
-      EmulatorList = await context.Emulators.OrderBy(e => e.Name).ToListAsync();
+      EmulatorList = await Context.Emulators.OrderBy(e => e.Name).ToListAsync();
     }
     else
     {
@@ -68,14 +61,11 @@
 
     if (!success)
     {
-      Success = false;
       Error = false;
       return;
     }
 
     Busy = true;
-
-    using var context = DbFactory.CreateDbContext();
 
     if (EmulatorCore is not null)
     {
@@ -83,32 +73,36 @@
       if (EmulatorCore.Emulator != null && EmulatorCore.Emulator.Id != Guid.Empty)
       {
         // Avoid duplicate entity tracking by getting a reference to the existing emulator
-        var existingEmulator = await context.Emulators.FindAsync(EmulatorCore.Emulator.Id);
+        var existingEmulator = await Context.Emulators.FindAsync(EmulatorCore.Emulator.Id);
         if (existingEmulator != null)
         {
           EmulatorCore.Emulator = existingEmulator;
         }
       }
       
-      context.EmulatorCores?.Add(EmulatorCore);
+      Context.EmulatorCores?.Add(EmulatorCore);
     }
 
     try
     {
-      await context.SaveChangesAsync();
-      Success = true;
+      await Context.SaveChangesAsync();
       Error = false;
 
       Navigation.NavigateTo($"/admin/emulator-core/view/{EmulatorCore?.Id}");
     }
     catch (Exception ex)
     {
-      Success = false;
       Error = true;
       ErrorMessage = ex.Message;
       Busy = false;
     }
   }
 
-  private void Cancel() => Navigation.NavigateTo($"/admin/emulator-core");
+  private void Cancel()
+  {
+    Busy = true;
+    Navigation.NavigateTo($"/admin/emulator-core");
+  }
+
+  public void Dispose() => Context?.Dispose();
 }

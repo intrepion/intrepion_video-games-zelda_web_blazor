@@ -65,6 +65,13 @@
 
     private void HandleNameChange(ChangeEventArgs changeEventArgs)
     {
+        if (Emulator != null && changeEventArgs.Value != null)
+        {
+            string stringValue = changeEventArgs.Value.ToString() ?? string.Empty;
+
+            Emulator.NormalizedName = stringValue.ToUpperInvariant();
+        }
+
         // SpecializedCodeNamePlaceholder
     }
 
