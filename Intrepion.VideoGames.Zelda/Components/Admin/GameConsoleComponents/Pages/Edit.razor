@@ -1,0 +1,168 @@
+@page "/admin/game-console/add"
+@page "/admin/game-console/edit/{GameConsoleId:guid?}"
+@rendermode InteractiveServer
+@implements IDisposable
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject NavigationManager Navigation
+
+<PageTitle>Game Console @(IsAdd ? "Add" : "Edit")</PageTitle>
+
+@if (GameConsole is null && !Busy && !IsAdd)
+{
+  <p>Could not find Game Console with id @GameConsoleId.</p>
+}
+else
+{
+    @* EmulatorList="EmulatorList" *@
+  <GameConsoleForm
+    CompanyList="CompanyList"
+    Busy="Busy" 
+    CancelRequest="Cancel"
+    DbGameConsole="DbGameConsole" 
+    GameConsole="GameConsole" 
+    IsAdd="IsAdd"
+    ValidationResult="@(async (success) => await ValidationResultAsync(success))"
+  />
+}
+
+@if (Error)
+{
+  <br />
+  <div class="alert alert-danger">Failed to @(IsAdd ? "add" : "update") the Game Console (@ErrorMessage).</div>
+}
+
+@code {
+  [Parameter]
+  public Guid? GameConsoleId { get; set; }
+
+  private bool IsAdd => GameConsoleId == null;
+
+  private ApplicationDbContext? Context { get; set; }
+
+  private GameConsole? GameConsole { get; set; }
+
+  private GameConsole DbGameConsole { get; set; } = new GameConsole();
+
+  private List<Company> CompanyList { get; set; } = new List<Company>();
+  @* ListDeclarationCodePlaceholder *@
+  @* private List<Emulator> EmulatorList { get; set; } = new List<Emulator>();*@
+
+  private bool Busy;
+
+  private bool Error;
+
+  private string ErrorMessage = string.Empty;
+
+  protected override async Task OnInitializedAsync()
+  {
+    Busy = true;
+
+    try
+    {
+      Context = DbFactory.CreateDbContext();
+
+      if (Context.Companies != null)
+      {
+        CompanyList = await Context.Companies.ToListAsync();
+      }
+      @* LoadListCodePlaceholder *@
+      @* if (Context.Emulators != null)
+      {
+        EmulatorList = await Context.Emulators.OrderBy(e => e.Name).ToListAsync();
+      } *@
+
+      if (IsAdd)
+      {
+        GameConsole = new();
+      }
+      else if (Context is not null && Context.GameConsoles is not null)
+      {
+        var gameConsole = await Context.GameConsoles
+            .Include(x => x.Company)
+            @* IncludeListCodePlaceholder *@
+            @* .Include(e => e.Emulator) *@
+            .SingleOrDefaultAsync(x => x.Id == GameConsoleId);
+
+        if (gameConsole is not null)
+        {
+          GameConsole = gameConsole;
+        }
+      }
+    }
+    finally
+    {
+      Busy = false;
+    }
+  }
+
+  private async Task ValidationResultAsync(bool success)
+  {
+    if (Busy)
+    {
+      return;
+    }
+
+    if (!success)
+    {
+      Error = false;
+      return;
+    }
+
+    Busy = true;
+
+    try
+    {
+      if (Context is not null && GameConsole is not null)
+      {
+        @* SetExistingCodePlaceholder *@
+        @* if (GameConsole.Emulator != null && GameConsole.Emulator.Id != Guid.Empty)
+        {
+          var existingEmulator = await Context.Emulators.FindAsync(GameConsole.Emulator.Id);
+          if (existingEmulator != null)
+          {
+            GameConsole.Emulator = existingEmulator;
+          }
+        } *@
+        
+        if (IsAdd && Context.GameConsoles != null)
+        {
+          Context.GameConsoles.Add(GameConsole);
+        }
+        
+        await Context.SaveChangesAsync();
+      }
+
+      Navigation.NavigateTo($"/admin/game-console/view/{GameConsole?.Id}");
+    }
+    catch (DbUpdateConcurrencyException dbex)
+    {
+      var dbValues = dbex.Entries[0].GetDatabaseValues();
+
+      if (dbValues is null)
+      {
+        Navigation.NavigateTo($"/admin/game-console/view/{GameConsole?.Id}");
+        return;
+      }
+
+      DbGameConsole = (GameConsole)dbValues.ToObject();
+
+      dbex.Entries[0].OriginalValues.SetValues(dbValues);
+      Error = false;
+      Busy = false;
+    }
+    catch (Exception ex)
+    {
+      Error = true;
+      ErrorMessage = ex.Message;
+      Busy = false;
+    }
+  }
+
+  private void Cancel()
+  {
+    Busy = true;
+    Navigation.NavigateTo($"/admin/game-console");
+  }
+
+  public void Dispose() => Context?.Dispose();
+}

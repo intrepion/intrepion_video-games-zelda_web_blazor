@@ -1,0 +1,224 @@
+<h1>@Mode RomTransition</h1>
+
+<hr />
+@if (RomTransition is not null)
+{
+    <EditForm Model="RomTransition" OnInvalidSubmit="(async () => await HandleSubmitAsync(false))" OnValidSubmit="(async () => await HandleSubmitAsync(true))">
+        <DataAnnotationsValidator />
+        <ValidationSummary />
+
+        <h2>Is Test?</h2>
+        <p>
+            <label>
+                Is Test?:
+                <InputCheckbox @bind-Value="RomTransition.IsTest" @oninput="HandleIsTestChange"/>
+            </label>
+        </p>
+        <h2>Previous Rom State</h2>
+        <p>
+            <label>
+                Previous Rom State:
+                <InputSelect @bind-Value="SelectedPreviousRomStateId" @oninput="HandlePreviousRomStateChange">
+                    <option value="">-- Select Previous Rom State --</option>
+                    @foreach (var previousRomState in PreviousRomStateList)
+                    {
+                        <option value="@previousRomState.Id">@previousRomState.Name</option>
+                    }
+                </InputSelect>
+            </label>
+        </p>
+        <h2>Rom Input</h2>
+        <p>
+            <label>
+                Rom Input:
+                <InputSelect @bind-Value="SelectedRomInputId" @oninput="HandleRomInputChange">
+                    <option value="">-- Select Rom Input --</option>
+                    @foreach (var romInput in RomInputList)
+                    {
+                        <option value="@romInput.Id">@romInput.Name</option>
+                    }
+                </InputSelect>
+            </label>
+        </p>
+        <h2>Rom State</h2>
+        <p>
+            <label>
+                Rom State:
+                <InputSelect @bind-Value="SelectedRomStateId" @oninput="HandleRomStateChange">
+                    <option value="">-- Select Rom State --</option>
+                    @foreach (var romState in RomStateList)
+                    {
+                        <option value="@romState.Id">@romState.Name</option>
+                    }
+                </InputSelect>
+            </label>
+        </p>
+        @* PropertyFormCodePlaceholder *@
+
+        <br />
+        <button type="button" disabled="@Busy" class="btn btn-warning" @onclick="CancelAsync">
+            Cancel
+        </button>&nbsp;
+        <button disabled="@Busy" type="submit" class="btn btn-primary">
+            Submit
+        </button>
+    </EditForm>
+}
+
+@code {
+    [Parameter]
+    public EventCallback<bool> ValidationResult { get; set; }
+
+    [Parameter]
+    public EventCallback CancelRequest { get; set; }
+
+    [Parameter]
+    public bool IsAdd { get; set; }
+
+    [Parameter]
+    public RomTransition? RomTransition { get; set; }
+
+    [Parameter]
+    public RomTransition? DbRomTransition { get; set; }
+
+    [Parameter]
+    public bool Busy { get; set; }
+
+    private string Mode => IsAdd ? "Add" : "Edit";
+
+    [Parameter]
+    public List<RomState> PreviousRomStateList { get; set; } = new List<RomState>();
+    private Guid SelectedPreviousRomStateId;
+    [Parameter]
+    public List<RomInput> RomInputList { get; set; } = new List<RomInput>();
+    private Guid SelectedRomInputId;
+    [Parameter]
+    public List<RomState> RomStateList { get; set; } = new List<RomState>();
+    private Guid SelectedRomStateId;
+    @* DeclareListCodePlaceholder *@
+
+    protected override void OnInitialized()
+    {
+        if (RomTransition?.PreviousRomState != null && !IsAdd)
+        {
+            SelectedPreviousRomStateId = RomTransition.PreviousRomState.Id;
+        }
+        if (RomTransition?.RomInput != null && !IsAdd)
+        {
+            SelectedRomInputId = RomTransition.RomInput.Id;
+        }
+        if (RomTransition?.RomState != null && !IsAdd)
+        {
+            SelectedRomStateId = RomTransition.RomState.Id;
+        }
+        @* OnInitialCodePlaceholder *@
+        @* if (EmulatorCore?.Emulator != null && !IsAdd)
+        {
+            SelectedEmulatorId = EmulatorCore.Emulator.Id;
+        } *@
+    }
+
+    private async Task CancelAsync() => await CancelRequest.InvokeAsync(null);
+
+    private async Task HandleSubmitAsync(bool isValid) => await ValidationResult.InvokeAsync(isValid);
+
+    private void HandleIsTestChange(ChangeEventArgs changeEventArgs)
+    {
+        // SpecializedCodeIsTestPlaceholder
+    }
+
+    private void HandlePreviousRomStateChange(ChangeEventArgs changeEventArgs)
+    {
+        if (RomTransition == null)
+        {
+            return;
+        }
+
+        if (changeEventArgs == null)
+        {
+            return;
+        }
+
+        if (changeEventArgs.Value == null)
+        {
+            return;
+        }
+
+        if (changeEventArgs.Value is string value && Guid.TryParse(value, out Guid selectedPreviousRomStateId))
+        {
+            SelectedPreviousRomStateId = selectedPreviousRomStateId;
+            var selectedPreviousRomState = PreviousRomStateList.FirstOrDefault(x => x.Id == SelectedPreviousRomStateId);
+
+            if (selectedPreviousRomState != null)
+            {
+                RomTransition.PreviousRomState = selectedPreviousRomState;
+            }
+        }
+
+        // SpecializedCodePreviousRomStatePlaceholder
+    }
+
+    private void HandleRomInputChange(ChangeEventArgs changeEventArgs)
+    {
+        if (RomTransition == null)
+        {
+            return;
+        }
+
+        if (changeEventArgs == null)
+        {
+            return;
+        }
+
+        if (changeEventArgs.Value == null)
+        {
+            return;
+        }
+
+        if (changeEventArgs.Value is string value && Guid.TryParse(value, out Guid selectedRomInputId))
+        {
+            SelectedRomInputId = selectedRomInputId;
+            var selectedRomInput = RomInputList.FirstOrDefault(x => x.Id == SelectedRomInputId);
+
+            if (selectedRomInput != null)
+            {
+                RomTransition.RomInput = selectedRomInput;
+            }
+        }
+
+        // SpecializedCodeRomInputPlaceholder
+    }
+
+    private void HandleRomStateChange(ChangeEventArgs changeEventArgs)
+    {
+        if (RomTransition == null)
+        {
+            return;
+        }
+
+        if (changeEventArgs == null)
+        {
+            return;
+        }
+
+        if (changeEventArgs.Value == null)
+        {
+            return;
+        }
+
+        if (changeEventArgs.Value is string value && Guid.TryParse(value, out Guid selectedRomStateId))
+        {
+            SelectedRomStateId = selectedRomStateId;
+            var selectedRomState = RomStateList.FirstOrDefault(x => x.Id == SelectedRomStateId);
+
+            if (selectedRomState != null)
+            {
+                RomTransition.RomState = selectedRomState;
+            }
+        }
+
+        // SpecializedCodeRomStatePlaceholder
+    }
+
+    // HandleChangeCodePlaceholder
+}
