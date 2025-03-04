@@ -1,43 +1,47 @@
-@page "/admin/emulator-core/edit/{EmulatorCoreId:guid}"
+@page "/admin/emulator-core/add"
+@page "/admin/emulator-core/edit/{EmulatorCoreId:guid?}"
 @rendermode InteractiveServer
 @implements IDisposable
 @inject IDbContextFactory<ApplicationDbContext> DbFactory
 @inject NavigationManager Navigation
 
-<PageTitle>Emulator Core Edit</PageTitle>
+<PageTitle>Emulator Core @(IsAdd ? "Add" : "Edit")</PageTitle>
 
-@if (EmulatorCore is null && !Busy)
+@if (EmulatorCore is null && !Busy && !IsAdd)
 {
   <p>Could not find Emulator Core with id @EmulatorCoreId.</p>
 }
 else
 {
   <EmulatorCoreForm Busy="Busy" 
-         CancelRequest="Cancel" 
+         CancelRequest="Cancel"
          DbEmulatorCore="DbEmulatorCore" 
          EmulatorCore="EmulatorCore" 
          EmulatorList="EmulatorList"
-         IsAdd="false" 
+         IsAdd="IsAdd"
          ValidationResult="@(async (success) => await ValidationResultAsync(success))" />
 }
 
 @if (Error)
 {
   <br />
-  <div class="alert alert-danger">Failed to update the Emulator Core (@ErrorMessage).</div>
+  <div class="alert alert-danger">Failed to @(IsAdd ? "add" : "update") the Emulator Core (@ErrorMessage).</div>
 }
 
 @code {
   [Parameter]
-  public Guid EmulatorCoreId { get; set; }
+  public Guid? EmulatorCoreId { get; set; }
+
+  // Determine if we're in Add mode based on the route
+  private bool IsAdd => EmulatorCoreId == null;
 
   private ApplicationDbContext? Context { get; set; }
 
-  private EmulatorCore EmulatorCore { get; set; } = new EmulatorCore();
+  private EmulatorCore? EmulatorCore { get; set; }
 
   private EmulatorCore DbEmulatorCore { get; set; } = new EmulatorCore();
   
-  // Add a list to store the emulators for the dropdown
+  // List to store the emulators for the dropdown
   private List<Emulator>? EmulatorList { get; set; }
 
   private bool Busy;
@@ -54,7 +58,7 @@ else
     {
       Context = DbFactory.CreateDbContext();
 
-      // Load emulators for the dropdown
+      // Load emulators for the dropdown in both cases
       if (Context.Emulators != null)
       {
         EmulatorList = await Context.Emulators.OrderBy(e => e.Name).ToListAsync();
@@ -64,9 +68,14 @@ else
         EmulatorList = new List<Emulator>();
       }
 
-      if (Context is not null && Context.EmulatorCores is not null)
+      if (IsAdd)
       {
-        // Include the Emulator navigation property when loading the EmulatorCore
+        // In Add mode, just create a new EmulatorCore
+        EmulatorCore = new();
+      }
+      else if (Context is not null && Context.EmulatorCores is not null)
+      {
+        // In Edit mode, load the existing EmulatorCore with its Emulator
         var emulatorCore = await Context.EmulatorCores
             .Include(e => e.Emulator)
             .SingleOrDefaultAsync(x => x.Id == EmulatorCoreId);
@@ -98,35 +107,40 @@ else
 
     Busy = true;
 
-    using var context = DbFactory.CreateDbContext();
-
     try
     {
-      if (Context is not null)
+      if (Context is not null && EmulatorCore is not null)
       {
-        // If the Emulator navigation property has changed, handle it correctly
+        // Handle the Emulator reference for both Add and Edit
         if (EmulatorCore.Emulator != null && EmulatorCore.Emulator.Id != Guid.Empty)
         {
+          // Avoid duplicate entity tracking by getting a reference to the existing emulator
           var existingEmulator = await Context.Emulators.FindAsync(EmulatorCore.Emulator.Id);
           if (existingEmulator != null)
           {
-            // Update the navigation property to use the tracked entity
             EmulatorCore.Emulator = existingEmulator;
           }
+        }
+        
+        // Add the entity if we're in Add mode
+        if (IsAdd && Context.EmulatorCores != null)
+        {
+          Context.EmulatorCores.Add(EmulatorCore);
         }
         
         await Context.SaveChangesAsync();
       }
 
-      Navigation.NavigateTo($"/admin/emulator-core/view/{EmulatorCore.Id}");
+      Navigation.NavigateTo($"/admin/emulator-core/view/{EmulatorCore?.Id}");
     }
     catch (DbUpdateConcurrencyException dbex)
     {
+      // This only happens in Edit mode
       var dbValues = dbex.Entries[0].GetDatabaseValues();
 
       if (dbValues is null)
       {
-        Navigation.NavigateTo($"/admin/emulator-core/view/{EmulatorCore.Id}");
+        Navigation.NavigateTo($"/admin/emulator-core/view/{EmulatorCore?.Id}");
         return;
       }
 
