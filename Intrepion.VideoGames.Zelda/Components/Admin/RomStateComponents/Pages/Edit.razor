@@ -1,0 +1,161 @@
+@page "/admin/rom-state/add"
+@page "/admin/rom-state/edit/{RomStateId:guid?}"
+@rendermode InteractiveServer
+@implements IDisposable
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject NavigationManager Navigation
+
+<PageTitle>Rom State @(IsAdd ? "Add" : "Edit")</PageTitle>
+
+@if (RomState is null && !Busy && !IsAdd)
+{
+  <p>Could not find Rom State with id @RomStateId.</p>
+}
+else
+{
+    @* EmulatorList="EmulatorList" *@
+  <RomStateForm
+    Busy="Busy" 
+    CancelRequest="Cancel"
+    DbRomState="DbRomState" 
+    RomState="RomState" 
+    IsAdd="IsAdd"
+    ValidationResult="@(async (success) => await ValidationResultAsync(success))"
+  />
+}
+
+@if (Error)
+{
+  <br />
+  <div class="alert alert-danger">Failed to @(IsAdd ? "add" : "update") the Rom State (@ErrorMessage).</div>
+}
+
+@code {
+  [Parameter]
+  public Guid? RomStateId { get; set; }
+
+  private bool IsAdd => RomStateId == null;
+
+  private ApplicationDbContext? Context { get; set; }
+
+  private RomState? RomState { get; set; }
+
+  private RomState DbRomState { get; set; } = new RomState();
+
+  @* ListDeclarationCodePlaceholder *@
+  @* private List<Emulator> EmulatorList { get; set; } = new List<Emulator>();*@
+
+  private bool Busy;
+
+  private bool Error;
+
+  private string ErrorMessage = string.Empty;
+
+  protected override async Task OnInitializedAsync()
+  {
+    Busy = true;
+
+    try
+    {
+      Context = DbFactory.CreateDbContext();
+
+      @* LoadListCodePlaceholder *@
+      @* if (Context.Emulators != null)
+      {
+        EmulatorList = await Context.Emulators.OrderBy(e => e.Name).ToListAsync();
+      } *@
+
+      if (IsAdd)
+      {
+        RomState = new();
+      }
+      else if (Context is not null && Context.RomStates is not null)
+      {
+        var romState = await Context.RomStates
+            @* IncludeListCodePlaceholder *@
+            @* .Include(e => e.Emulator) *@
+            .SingleOrDefaultAsync(x => x.Id == RomStateId);
+
+        if (romState is not null)
+        {
+          RomState = romState;
+        }
+      }
+    }
+    finally
+    {
+      Busy = false;
+    }
+  }
+
+  private async Task ValidationResultAsync(bool success)
+  {
+    if (Busy)
+    {
+      return;
+    }
+
+    if (!success)
+    {
+      Error = false;
+      return;
+    }
+
+    Busy = true;
+
+    try
+    {
+      if (Context is not null && RomState is not null)
+      {
+        @* SetExistingCodePlaceholder *@
+        @* if (RomState.Emulator != null && RomState.Emulator.Id != Guid.Empty)
+        {
+          var existingEmulator = await Context.Emulators.FindAsync(RomState.Emulator.Id);
+          if (existingEmulator != null)
+          {
+            RomState.Emulator = existingEmulator;
+          }
+        } *@
+        
+        if (IsAdd && Context.RomStates != null)
+        {
+          Context.RomStates.Add(RomState);
+        }
+        
+        await Context.SaveChangesAsync();
+      }
+
+      Navigation.NavigateTo($"/admin/rom-state/view/{RomState?.Id}");
+    }
+    catch (DbUpdateConcurrencyException dbex)
+    {
+      var dbValues = dbex.Entries[0].GetDatabaseValues();
+
+      if (dbValues is null)
+      {
+        Navigation.NavigateTo($"/admin/rom-state/view/{RomState?.Id}");
+        return;
+      }
+
+      DbRomState = (RomState)dbValues.ToObject();
+
+      dbex.Entries[0].OriginalValues.SetValues(dbValues);
+      Error = false;
+      Busy = false;
+    }
+    catch (Exception ex)
+    {
+      Error = true;
+      ErrorMessage = ex.Message;
+      Busy = false;
+    }
+  }
+
+  private void Cancel()
+  {
+    Busy = true;
+    Navigation.NavigateTo($"/admin/rom-state");
+  }
+
+  public void Dispose() => Context?.Dispose();
+}

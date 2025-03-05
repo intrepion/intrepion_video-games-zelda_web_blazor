@@ -1,0 +1,175 @@
+@page "/admin/web-site-subcategory/add"
+@page "/admin/web-site-subcategory/edit/{WebSiteSubcategoryId:guid?}"
+@rendermode InteractiveServer
+@implements IDisposable
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject NavigationManager Navigation
+
+<PageTitle>WebSite Subcategory @(IsAdd ? "Add" : "Edit")</PageTitle>
+
+@if (WebSiteSubcategory is null && !Busy && !IsAdd)
+{
+  <p>Could not find WebSite Subcategory with id @WebSiteSubcategoryId.</p>
+}
+else
+{
+    @* EmulatorList="EmulatorList" *@
+  <WebSiteSubcategoryForm
+    WebSiteList="WebSiteList"
+    WebSiteCategoryList="WebSiteCategoryList"
+    Busy="Busy" 
+    CancelRequest="Cancel"
+    DbWebSiteSubcategory="DbWebSiteSubcategory" 
+    WebSiteSubcategory="WebSiteSubcategory" 
+    IsAdd="IsAdd"
+    ValidationResult="@(async (success) => await ValidationResultAsync(success))"
+  />
+}
+
+@if (Error)
+{
+  <br />
+  <div class="alert alert-danger">Failed to @(IsAdd ? "add" : "update") the WebSite Subcategory (@ErrorMessage).</div>
+}
+
+@code {
+  [Parameter]
+  public Guid? WebSiteSubcategoryId { get; set; }
+
+  private bool IsAdd => WebSiteSubcategoryId == null;
+
+  private ApplicationDbContext? Context { get; set; }
+
+  private WebSiteSubcategory? WebSiteSubcategory { get; set; }
+
+  private WebSiteSubcategory DbWebSiteSubcategory { get; set; } = new WebSiteSubcategory();
+
+  private List<WebSite> WebSiteList { get; set; } = new List<WebSite>();
+  private List<WebSiteCategory> WebSiteCategoryList { get; set; } = new List<WebSiteCategory>();
+  @* ListDeclarationCodePlaceholder *@
+  @* private List<Emulator> EmulatorList { get; set; } = new List<Emulator>();*@
+
+  private bool Busy;
+
+  private bool Error;
+
+  private string ErrorMessage = string.Empty;
+
+  protected override async Task OnInitializedAsync()
+  {
+    Busy = true;
+
+    try
+    {
+      Context = DbFactory.CreateDbContext();
+
+      if (Context.WebSites != null)
+      {
+        WebSiteList = await Context.WebSites.ToListAsync();
+      }
+      if (Context.WebSiteCategories != null)
+      {
+        WebSiteCategoryList = await Context.WebSiteCategories.ToListAsync();
+      }
+      @* LoadListCodePlaceholder *@
+      @* if (Context.Emulators != null)
+      {
+        EmulatorList = await Context.Emulators.OrderBy(e => e.Name).ToListAsync();
+      } *@
+
+      if (IsAdd)
+      {
+        WebSiteSubcategory = new();
+      }
+      else if (Context is not null && Context.WebSiteSubcategories is not null)
+      {
+        var webSiteSubcategory = await Context.WebSiteSubcategories
+            .Include(x => x.WebSite)
+            .Include(x => x.WebSiteCategory)
+            @* IncludeListCodePlaceholder *@
+            @* .Include(e => e.Emulator) *@
+            .SingleOrDefaultAsync(x => x.Id == WebSiteSubcategoryId);
+
+        if (webSiteSubcategory is not null)
+        {
+          WebSiteSubcategory = webSiteSubcategory;
+        }
+      }
+    }
+    finally
+    {
+      Busy = false;
+    }
+  }
+
+  private async Task ValidationResultAsync(bool success)
+  {
+    if (Busy)
+    {
+      return;
+    }
+
+    if (!success)
+    {
+      Error = false;
+      return;
+    }
+
+    Busy = true;
+
+    try
+    {
+      if (Context is not null && WebSiteSubcategory is not null)
+      {
+        @* SetExistingCodePlaceholder *@
+        @* if (WebSiteSubcategory.Emulator != null && WebSiteSubcategory.Emulator.Id != Guid.Empty)
+        {
+          var existingEmulator = await Context.Emulators.FindAsync(WebSiteSubcategory.Emulator.Id);
+          if (existingEmulator != null)
+          {
+            WebSiteSubcategory.Emulator = existingEmulator;
+          }
+        } *@
+        
+        if (IsAdd && Context.WebSiteSubcategories != null)
+        {
+          Context.WebSiteSubcategories.Add(WebSiteSubcategory);
+        }
+        
+        await Context.SaveChangesAsync();
+      }
+
+      Navigation.NavigateTo($"/admin/web-site-subcategory/view/{WebSiteSubcategory?.Id}");
+    }
+    catch (DbUpdateConcurrencyException dbex)
+    {
+      var dbValues = dbex.Entries[0].GetDatabaseValues();
+
+      if (dbValues is null)
+      {
+        Navigation.NavigateTo($"/admin/web-site-subcategory/view/{WebSiteSubcategory?.Id}");
+        return;
+      }
+
+      DbWebSiteSubcategory = (WebSiteSubcategory)dbValues.ToObject();
+
+      dbex.Entries[0].OriginalValues.SetValues(dbValues);
+      Error = false;
+      Busy = false;
+    }
+    catch (Exception ex)
+    {
+      Error = true;
+      ErrorMessage = ex.Message;
+      Busy = false;
+    }
+  }
+
+  private void Cancel()
+  {
+    Busy = true;
+    Navigation.NavigateTo($"/admin/web-site-subcategory");
+  }
+
+  public void Dispose() => Context?.Dispose();
+}

@@ -1,0 +1,124 @@
+@implements IDisposable
+
+@inject NavigationManager NavigationManager
+
+<ul class="nav nav-pills flex-column mb-sm-auto mb-0 align-items-center align-items-sm-start">
+  <li class="nav-item">
+    <NavLink class="nav-link" data-testid="applicationRoleNavLink" href="admin/application-role">
+      Application Roles
+    </NavLink>
+  </li>
+  <li class="nav-item">
+    <NavLink class="nav-link" data-testid="applicationUserNavLink" href="admin/application-user">
+      Application Users
+    </NavLink>
+  </li>
+
+  <li class="nav-item">
+        <NavLink class="nav-link" data-testid="companyNavLink" href="admin/company">
+          Companies
+        </NavLink>
+ </li>
+
+      <li class="nav-item">
+        <NavLink class="nav-link" data-testid="emulatorNavLink" href="admin/emulator">
+          Emulators
+        </NavLink>
+ </li>
+
+      <li class="nav-item">
+        <NavLink class="nav-link" data-testid="emulatorCoreNavLink" href="admin/emulator-core">
+          Emulator Cores
+        </NavLink>
+ </li>
+
+      <li class="nav-item">
+        <NavLink class="nav-link" data-testid="gameConsoleNavLink" href="admin/game-console">
+          Game Consoles
+        </NavLink>
+ </li>
+
+      <li class="nav-item">
+        <NavLink class="nav-link" data-testid="languageNavLink" href="admin/language">
+          Languages
+        </NavLink>
+ </li>
+
+      <li class="nav-item">
+        <NavLink class="nav-link" data-testid="playSessionNavLink" href="admin/play-session">
+          Play Sessions
+        </NavLink>
+ </li>
+
+      <li class="nav-item">
+        <NavLink class="nav-link" data-testid="romNavLink" href="admin/rom">
+          Roms
+        </NavLink>
+ </li>
+
+      <li class="nav-item">
+        <NavLink class="nav-link" data-testid="romInputNavLink" href="admin/rom-input">
+          Rom Inputs
+        </NavLink>
+ </li>
+
+      <li class="nav-item">
+        <NavLink class="nav-link" data-testid="romStateNavLink" href="admin/rom-state">
+          Rom States
+        </NavLink>
+ </li>
+
+      <li class="nav-item">
+        <NavLink class="nav-link" data-testid="romTextNavLink" href="admin/rom-text">
+          Rom Texts
+        </NavLink>
+ </li>
+
+      <li class="nav-item">
+        <NavLink class="nav-link" data-testid="romTransitionNavLink" href="admin/rom-transition">
+          Rom Transitions
+        </NavLink>
+ </li>
+
+      <li class="nav-item">
+        <NavLink class="nav-link" data-testid="webSiteNavLink" href="admin/web-site">
+          Web Sites
+        </NavLink>
+ </li>
+
+      <li class="nav-item">
+        <NavLink class="nav-link" data-testid="webSiteCategoryNavLink" href="admin/web-site-category">
+          WebSiteCategories
+        </NavLink>
+ </li>
+
+      <li class="nav-item">
+        <NavLink class="nav-link" data-testid="webSiteSubcategoryNavLink" href="admin/web-site-subcategory">
+          WebSite Subcategories
+        </NavLink>
+ </li>
+
+      @* NavMenuLinkCodePlaceholder *@
+
+</ul>
+
+@code {
+    private string? currentUrl;
+
+    protected override void OnInitialized()
+    {
+        currentUrl = NavigationManager.ToBaseRelativePath(NavigationManager.Uri);
+        NavigationManager.LocationChanged += OnLocationChanged;
+    }
+
+    private void OnLocationChanged(object? sender, LocationChangedEventArgs e)
+    {
+        currentUrl = NavigationManager.ToBaseRelativePath(e.Location);
+        StateHasChanged();
+    }
+
+    public void Dispose()
+    {
+        NavigationManager.LocationChanged -= OnLocationChanged;
+    }
+}

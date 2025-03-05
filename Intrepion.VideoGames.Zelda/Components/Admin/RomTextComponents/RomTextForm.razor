@@ -1,0 +1,129 @@
+<h1>@Mode RomText</h1>
+
+<hr />
+@if (RomText is not null)
+{
+    <EditForm Model="RomText" OnInvalidSubmit="(async () => await HandleSubmitAsync(false))" OnValidSubmit="(async () => await HandleSubmitAsync(true))">
+        <DataAnnotationsValidator />
+        <ValidationSummary />
+
+        <div class="mb-3">
+            <label class="form-label">Is Test?:
+                <InputCheckbox @bind-Value="RomText.IsTest" @oninput="HandleIsTestChange" class="form-check-input"/>
+            </label>
+        </div>
+        <h2>Rom State</h2>
+        <p>
+            <label>
+                Rom State:
+                <InputSelect @bind-Value="SelectedRomStateId" @oninput="HandleRomStateChange" class="form-select">
+                    <option value="">-- Select Rom State --</option>
+                    @foreach (var romState in RomStateList)
+                    {
+                        <option value="@romState.Id">@romState.Name</option>
+                    }
+                </InputSelect>
+            </label>
+        </p>
+        <div class="mb-3">
+            <label class="form-label">Text:
+                <InputText @bind-Value="RomText.Text" @oninput="HandleTextChange" class="form-control"/>
+            </label>
+        </div>
+        @* PropertyFormCodePlaceholder *@
+
+        <button type="button" disabled="@Busy" class="btn btn-warning" @onclick="CancelAsync">
+            Cancel
+        </button>&nbsp;
+        <button disabled="@Busy" type="submit" class="btn btn-primary">
+            Submit
+        </button>
+    </EditForm>
+}
+
+@code {
+    [Parameter]
+    public EventCallback<bool> ValidationResult { get; set; }
+
+    [Parameter]
+    public EventCallback CancelRequest { get; set; }
+
+    [Parameter]
+    public bool IsAdd { get; set; }
+
+    [Parameter]
+    public RomText? RomText { get; set; }
+
+    [Parameter]
+    public RomText? DbRomText { get; set; }
+
+    [Parameter]
+    public bool Busy { get; set; }
+
+    private string Mode => IsAdd ? "Add" : "Edit";
+
+    [Parameter]
+    public List<RomState> RomStateList { get; set; } = new List<RomState>();
+    private Guid SelectedRomStateId;
+    @* DeclareListCodePlaceholder *@
+
+    protected override void OnInitialized()
+    {
+        if (RomText?.RomState != null && !IsAdd)
+        {
+            SelectedRomStateId = RomText.RomState.Id;
+        }
+        @* OnInitialCodePlaceholder *@
+        @* if (EmulatorCore?.Emulator != null && !IsAdd)
+        {
+            SelectedEmulatorId = EmulatorCore.Emulator.Id;
+        } *@
+    }
+
+    private async Task CancelAsync() => await CancelRequest.InvokeAsync(null);
+
+    private async Task HandleSubmitAsync(bool isValid) => await ValidationResult.InvokeAsync(isValid);
+
+    private void HandleIsTestChange(ChangeEventArgs changeEventArgs)
+    {
+        // SpecializedCodeIsTestPlaceholder
+    }
+
+    private void HandleRomStateChange(ChangeEventArgs changeEventArgs)
+    {
+        if (RomText == null)
+        {
+            return;
+        }
+
+        if (changeEventArgs == null)
+        {
+            return;
+        }
+
+        if (changeEventArgs.Value == null)
+        {
+            return;
+        }
+
+        if (changeEventArgs.Value is string value && Guid.TryParse(value, out Guid selectedRomStateId))
+        {
+            SelectedRomStateId = selectedRomStateId;
+            var selectedRomState = RomStateList.FirstOrDefault(x => x.Id == SelectedRomStateId);
+
+            if (selectedRomState != null)
+            {
+                RomText.RomState = selectedRomState;
+            }
+        }
+
+        // SpecializedCodeRomStatePlaceholder
+    }
+
+    private void HandleTextChange(ChangeEventArgs changeEventArgs)
+    {
+        // SpecializedCodeTextPlaceholder
+    }
+
+    // HandleChangeCodePlaceholder
+}

@@ -1,0 +1,168 @@
+@page "/admin/emulator-core/add"
+@page "/admin/emulator-core/edit/{EmulatorCoreId:guid?}"
+@rendermode InteractiveServer
+@implements IDisposable
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject NavigationManager Navigation
+
+<PageTitle>Emulator Core @(IsAdd ? "Add" : "Edit")</PageTitle>
+
+@if (EmulatorCore is null && !Busy && !IsAdd)
+{
+  <p>Could not find Emulator Core with id @EmulatorCoreId.</p>
+}
+else
+{
+    @* EmulatorList="EmulatorList" *@
+  <EmulatorCoreForm
+    EmulatorList="EmulatorList"
+    Busy="Busy" 
+    CancelRequest="Cancel"
+    DbEmulatorCore="DbEmulatorCore" 
+    EmulatorCore="EmulatorCore" 
+    IsAdd="IsAdd"
+    ValidationResult="@(async (success) => await ValidationResultAsync(success))"
+  />
+}
+
+@if (Error)
+{
+  <br />
+  <div class="alert alert-danger">Failed to @(IsAdd ? "add" : "update") the Emulator Core (@ErrorMessage).</div>
+}
+
+@code {
+  [Parameter]
+  public Guid? EmulatorCoreId { get; set; }
+
+  private bool IsAdd => EmulatorCoreId == null;
+
+  private ApplicationDbContext? Context { get; set; }
+
+  private EmulatorCore? EmulatorCore { get; set; }
+
+  private EmulatorCore DbEmulatorCore { get; set; } = new EmulatorCore();
+
+  private List<Emulator> EmulatorList { get; set; } = new List<Emulator>();
+  @* ListDeclarationCodePlaceholder *@
+  @* private List<Emulator> EmulatorList { get; set; } = new List<Emulator>();*@
+
+  private bool Busy;
+
+  private bool Error;
+
+  private string ErrorMessage = string.Empty;
+
+  protected override async Task OnInitializedAsync()
+  {
+    Busy = true;
+
+    try
+    {
+      Context = DbFactory.CreateDbContext();
+
+      if (Context.Emulators != null)
+      {
+        EmulatorList = await Context.Emulators.ToListAsync();
+      }
+      @* LoadListCodePlaceholder *@
+      @* if (Context.Emulators != null)
+      {
+        EmulatorList = await Context.Emulators.OrderBy(e => e.Name).ToListAsync();
+      } *@
+
+      if (IsAdd)
+      {
+        EmulatorCore = new();
+      }
+      else if (Context is not null && Context.EmulatorCores is not null)
+      {
+        var emulatorCore = await Context.EmulatorCores
+            .Include(x => x.Emulator)
+            @* IncludeListCodePlaceholder *@
+            @* .Include(e => e.Emulator) *@
+            .SingleOrDefaultAsync(x => x.Id == EmulatorCoreId);
+
+        if (emulatorCore is not null)
+        {
+          EmulatorCore = emulatorCore;
+        }
+      }
+    }
+    finally
+    {
+      Busy = false;
+    }
+  }
+
+  private async Task ValidationResultAsync(bool success)
+  {
+    if (Busy)
+    {
+      return;
+    }
+
+    if (!success)
+    {
+      Error = false;
+      return;
+    }
+
+    Busy = true;
+
+    try
+    {
+      if (Context is not null && EmulatorCore is not null)
+      {
+        @* SetExistingCodePlaceholder *@
+        @* if (EmulatorCore.Emulator != null && EmulatorCore.Emulator.Id != Guid.Empty)
+        {
+          var existingEmulator = await Context.Emulators.FindAsync(EmulatorCore.Emulator.Id);
+          if (existingEmulator != null)
+          {
+            EmulatorCore.Emulator = existingEmulator;
+          }
+        } *@
+        
+        if (IsAdd && Context.EmulatorCores != null)
+        {
+          Context.EmulatorCores.Add(EmulatorCore);
+        }
+        
+        await Context.SaveChangesAsync();
+      }
+
+      Navigation.NavigateTo($"/admin/emulator-core/view/{EmulatorCore?.Id}");
+    }
+    catch (DbUpdateConcurrencyException dbex)
+    {
+      var dbValues = dbex.Entries[0].GetDatabaseValues();
+
+      if (dbValues is null)
+      {
+        Navigation.NavigateTo($"/admin/emulator-core/view/{EmulatorCore?.Id}");
+        return;
+      }
+
+      DbEmulatorCore = (EmulatorCore)dbValues.ToObject();
+
+      dbex.Entries[0].OriginalValues.SetValues(dbValues);
+      Error = false;
+      Busy = false;
+    }
+    catch (Exception ex)
+    {
+      Error = true;
+      ErrorMessage = ex.Message;
+      Busy = false;
+    }
+  }
+
+  private void Cancel()
+  {
+    Busy = true;
+    Navigation.NavigateTo($"/admin/emulator-core");
+  }
+
+  public void Dispose() => Context?.Dispose();
+}
