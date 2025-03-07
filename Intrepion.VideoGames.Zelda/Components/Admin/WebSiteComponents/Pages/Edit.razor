@@ -1,0 +1,161 @@
+@page "/admin/web-site/add"
+@page "/admin/web-site/edit/{WebSiteId:guid?}"
+@rendermode InteractiveServer
+@implements IDisposable
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject NavigationManager Navigation
+
+<PageTitle>Web Site @(IsAdd ? "Add" : "Edit")</PageTitle>
+
+@if (WebSite is null && !Busy && !IsAdd)
+{
+  <p>Could not find Web Site with id @WebSiteId.</p>
+}
+else
+{
+    @* EmulatorList="EmulatorList" *@
+  <WebSiteForm
+    Busy="Busy" 
+    CancelRequest="Cancel"
+    DbWebSite="DbWebSite" 
+    WebSite="WebSite" 
+    IsAdd="IsAdd"
+    ValidationResult="@(async (success) => await ValidationResultAsync(success))"
+  />
+}
+
+@if (Error)
+{
+  <br />
+  <div class="alert alert-danger">Failed to @(IsAdd ? "add" : "update") the Web Site (@ErrorMessage).</div>
+}
+
+@code {
+  [Parameter]
+  public Guid? WebSiteId { get; set; }
+
+  private bool IsAdd => WebSiteId == null;
+
+  private ApplicationDbContext? Context { get; set; }
+
+  private WebSite? WebSite { get; set; }
+
+  private WebSite DbWebSite { get; set; } = new WebSite();
+
+  @* ListDeclarationCodePlaceholder *@
+  @* private List<Emulator> EmulatorList { get; set; } = new List<Emulator>();*@
+
+  private bool Busy;
+
+  private bool Error;
+
+  private string ErrorMessage = string.Empty;
+
+  protected override async Task OnInitializedAsync()
+  {
+    Busy = true;
+
+    try
+    {
+      Context = DbFactory.CreateDbContext();
+
+      @* LoadListCodePlaceholder *@
+      @* if (Context.Emulators != null)
+      {
+        EmulatorList = await Context.Emulators.OrderBy(e => e.Name).ToListAsync();
+      } *@
+
+      if (IsAdd)
+      {
+        WebSite = new();
+      }
+      else if (Context is not null && Context.WebSites is not null)
+      {
+        var webSite = await Context.WebSites
+            @* IncludeListCodePlaceholder *@
+            @* .Include(e => e.Emulator) *@
+            .SingleOrDefaultAsync(x => x.Id == WebSiteId);
+
+        if (webSite is not null)
+        {
+          WebSite = webSite;
+        }
+      }
+    }
+    finally
+    {
+      Busy = false;
+    }
+  }
+
+  private async Task ValidationResultAsync(bool success)
+  {
+    if (Busy)
+    {
+      return;
+    }
+
+    if (!success)
+    {
+      Error = false;
+      return;
+    }
+
+    Busy = true;
+
+    try
+    {
+      if (Context is not null && WebSite is not null)
+      {
+        @* SetExistingCodePlaceholder *@
+        @* if (WebSite.Emulator != null && WebSite.Emulator.Id != Guid.Empty)
+        {
+          var existingEmulator = await Context.Emulators.FindAsync(WebSite.Emulator.Id);
+          if (existingEmulator != null)
+          {
+            WebSite.Emulator = existingEmulator;
+          }
+        } *@
+        
+        if (IsAdd && Context.WebSites != null)
+        {
+          Context.WebSites.Add(WebSite);
+        }
+        
+        await Context.SaveChangesAsync();
+      }
+
+      Navigation.NavigateTo($"/admin/web-site/view/{WebSite?.Id}");
+    }
+    catch (DbUpdateConcurrencyException dbex)
+    {
+      var dbValues = dbex.Entries[0].GetDatabaseValues();
+
+      if (dbValues is null)
+      {
+        Navigation.NavigateTo($"/admin/web-site/view/{WebSite?.Id}");
+        return;
+      }
+
+      DbWebSite = (WebSite)dbValues.ToObject();
+
+      dbex.Entries[0].OriginalValues.SetValues(dbValues);
+      Error = false;
+      Busy = false;
+    }
+    catch (Exception ex)
+    {
+      Error = true;
+      ErrorMessage = ex.Message;
+      Busy = false;
+    }
+  }
+
+  private void Cancel()
+  {
+    Busy = true;
+    Navigation.NavigateTo($"/admin/web-site");
+  }
+
+  public void Dispose() => Context?.Dispose();
+}

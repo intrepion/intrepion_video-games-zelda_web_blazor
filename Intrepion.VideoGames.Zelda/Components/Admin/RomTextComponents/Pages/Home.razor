@@ -1,0 +1,82 @@
+@page "/admin/rom-text"
+@rendermode InteractiveServer
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject NavigationManager Navigation
+
+<PageTitle>Rom Text Home</PageTitle>
+
+<h1>Rom Text Home</h1>
+<h6><a href="/admin/rom-text/add">Create New</a></h6>
+
+<div class="container-fluid">
+  <table class="table table-hover table-primary table-striped">
+    <thead>
+      <tr>
+        <th>Actions</th>
+        <th>Is Test?</th>
+        <th>Rom State</th>
+        <th>Text</th>
+        @* TableHeaderCodePlaceholder *@
+      </tr>
+    </thead>
+    <tbody>
+      @if (romTexts is not null)
+      {
+        @foreach (var romText in romTexts)
+        {
+          <tr>
+            <td>
+              <div class="btn-group">
+                <a class="btn btn-primary btn-sm btn-info" href="/admin/rom-text/view/@romText.Id" title="View">
+                  <i class="bi bi-eye"></i>
+                </a>
+                <a class="btn btn-primary btn-sm" href="/admin/rom-text/edit/@romText.Id" title="Edit">
+                  <i class="bi bi-pencil"></i>
+                </a>
+              </div>
+            </td>
+            <td>
+              @if (romText != null && romText.IsTest)
+              {
+                <span class="badge bg-success">Yes</span>
+              }
+              else
+              {
+                <span class="badge bg-warning text-dark">No</span>
+              }
+            </td>
+            <td>@romText?.RomState?.Name</td>
+            <td>@romText?.Text</td>
+            @* TableRowCodePlaceholder *@
+          </tr>
+        }
+      }
+    </tbody>
+  </table>
+</div>
+
+@code {
+  private ICollection<RomText>? romTexts { get; set; }
+
+  protected override async Task OnParametersSetAsync()
+  {
+    await ReloadAsync();
+  }
+
+  private async Task ReloadAsync()
+  {
+    romTexts = new List<RomText>();
+
+    using var context = DbFactory.CreateDbContext();
+    var query = context.RomTexts?.AsQueryable();
+
+    if (query is not null)
+    {
+      romTexts = await query
+        .Include(x => x.RomState)
+        @* QueryIncludeCodePlaceholder *@
+        .AsNoTracking().ToListAsync();
+    }
+  }
+}
+

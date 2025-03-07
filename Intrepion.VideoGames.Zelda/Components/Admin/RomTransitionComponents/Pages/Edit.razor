@@ -1,0 +1,182 @@
+@page "/admin/rom-transition/add"
+@page "/admin/rom-transition/edit/{RomTransitionId:guid?}"
+@rendermode InteractiveServer
+@implements IDisposable
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject NavigationManager Navigation
+
+<PageTitle>Rom Transition @(IsAdd ? "Add" : "Edit")</PageTitle>
+
+@if (RomTransition is null && !Busy && !IsAdd)
+{
+  <p>Could not find Rom Transition with id @RomTransitionId.</p>
+}
+else
+{
+    @* EmulatorList="EmulatorList" *@
+  <RomTransitionForm
+    PreviousRomStateList="PreviousRomStateList"
+    RomInputList="RomInputList"
+    RomStateList="RomStateList"
+    Busy="Busy" 
+    CancelRequest="Cancel"
+    DbRomTransition="DbRomTransition" 
+    RomTransition="RomTransition" 
+    IsAdd="IsAdd"
+    ValidationResult="@(async (success) => await ValidationResultAsync(success))"
+  />
+}
+
+@if (Error)
+{
+  <br />
+  <div class="alert alert-danger">Failed to @(IsAdd ? "add" : "update") the Rom Transition (@ErrorMessage).</div>
+}
+
+@code {
+  [Parameter]
+  public Guid? RomTransitionId { get; set; }
+
+  private bool IsAdd => RomTransitionId == null;
+
+  private ApplicationDbContext? Context { get; set; }
+
+  private RomTransition? RomTransition { get; set; }
+
+  private RomTransition DbRomTransition { get; set; } = new RomTransition();
+
+  private List<RomState> PreviousRomStateList { get; set; } = new List<RomState>();
+  private List<RomInput> RomInputList { get; set; } = new List<RomInput>();
+  private List<RomState> RomStateList { get; set; } = new List<RomState>();
+  @* ListDeclarationCodePlaceholder *@
+  @* private List<Emulator> EmulatorList { get; set; } = new List<Emulator>();*@
+
+  private bool Busy;
+
+  private bool Error;
+
+  private string ErrorMessage = string.Empty;
+
+  protected override async Task OnInitializedAsync()
+  {
+    Busy = true;
+
+    try
+    {
+      Context = DbFactory.CreateDbContext();
+
+      if (Context.RomStates != null)
+      {
+        PreviousRomStateList = await Context.RomStates.ToListAsync();
+      }
+      if (Context.RomInputs != null)
+      {
+        RomInputList = await Context.RomInputs.ToListAsync();
+      }
+      if (Context.RomStates != null)
+      {
+        RomStateList = await Context.RomStates.ToListAsync();
+      }
+      @* LoadListCodePlaceholder *@
+      @* if (Context.Emulators != null)
+      {
+        EmulatorList = await Context.Emulators.OrderBy(e => e.Name).ToListAsync();
+      } *@
+
+      if (IsAdd)
+      {
+        RomTransition = new();
+      }
+      else if (Context is not null && Context.RomTransitions is not null)
+      {
+        var romTransition = await Context.RomTransitions
+            .Include(x => x.PreviousRomState)
+            .Include(x => x.RomInput)
+            .Include(x => x.RomState)
+            @* IncludeListCodePlaceholder *@
+            @* .Include(e => e.Emulator) *@
+            .SingleOrDefaultAsync(x => x.Id == RomTransitionId);
+
+        if (romTransition is not null)
+        {
+          RomTransition = romTransition;
+        }
+      }
+    }
+    finally
+    {
+      Busy = false;
+    }
+  }
+
+  private async Task ValidationResultAsync(bool success)
+  {
+    if (Busy)
+    {
+      return;
+    }
+
+    if (!success)
+    {
+      Error = false;
+      return;
+    }
+
+    Busy = true;
+
+    try
+    {
+      if (Context is not null && RomTransition is not null)
+      {
+        @* SetExistingCodePlaceholder *@
+        @* if (RomTransition.Emulator != null && RomTransition.Emulator.Id != Guid.Empty)
+        {
+          var existingEmulator = await Context.Emulators.FindAsync(RomTransition.Emulator.Id);
+          if (existingEmulator != null)
+          {
+            RomTransition.Emulator = existingEmulator;
+          }
+        } *@
+        
+        if (IsAdd && Context.RomTransitions != null)
+        {
+          Context.RomTransitions.Add(RomTransition);
+        }
+        
+        await Context.SaveChangesAsync();
+      }
+
+      Navigation.NavigateTo($"/admin/rom-transition/view/{RomTransition?.Id}");
+    }
+    catch (DbUpdateConcurrencyException dbex)
+    {
+      var dbValues = dbex.Entries[0].GetDatabaseValues();
+
+      if (dbValues is null)
+      {
+        Navigation.NavigateTo($"/admin/rom-transition/view/{RomTransition?.Id}");
+        return;
+      }
+
+      DbRomTransition = (RomTransition)dbValues.ToObject();
+
+      dbex.Entries[0].OriginalValues.SetValues(dbValues);
+      Error = false;
+      Busy = false;
+    }
+    catch (Exception ex)
+    {
+      Error = true;
+      ErrorMessage = ex.Message;
+      Busy = false;
+    }
+  }
+
+  private void Cancel()
+  {
+    Busy = true;
+    Navigation.NavigateTo($"/admin/rom-transition");
+  }
+
+  public void Dispose() => Context?.Dispose();
+}

@@ -1,0 +1,222 @@
+@page "/admin/rom-state/view/{RomStateId:guid}"
+@rendermode InteractiveServer
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject EditSuccess EditSuccessState
+
+<PageTitle>Rom State View</PageTitle>
+
+@if (NotFound && !Loading)
+{
+  <div class="alert alert-warning">Rom State with that id doesn't exist.</div>
+}
+else
+{
+  @if (RomState is null || Loading)
+  {
+    <div class="alert alert-info">Loading...</div>
+  }
+  else
+  {
+    @* <h1>Rom State Details</h1>
+    <h6>ID: @RomState.Id</h6> *@
+    <h1>Rom State Details</h1>
+    <h6>ID: @RomState.Id</h6>
+    @* PageHeaderCodePlaceholder *@
+
+    <br />
+    @if (EditSuccess)
+    {
+      <div class="alert alert-success">Successfully updated the Rom State.</div>
+    }
+    <hr />
+
+    <div class="container-fluid">
+      <table class="table table-hover table-primary table-striped">
+        <thead>
+          <tr>
+            <th>Property</th>
+            <th>Value</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>ID</td>
+            <td>@RomState.Id</td>
+          </tr>
+          <tr>
+            <td>IsTest</td>
+            <td>@RomState?.IsTest</td>
+          </tr>
+          <tr>
+            <td>Name</td>
+            <td>@RomState?.Name</td>
+          </tr>
+          <tr>
+            <td>T</td>
+            <td>@RomState?.T</td>
+          </tr>
+          <tr>
+            <td>X</td>
+            <td>@RomState?.X</td>
+          </tr>
+          <tr>
+            <td>Y</td>
+            <td>@RomState?.Y</td>
+          </tr>
+          <tr>
+            <td>Z</td>
+            <td>@RomState?.Z</td>
+          </tr>
+          @* ViewPropertyCodePlaceholder *@
+          @* <tr>
+            <td>Employee</td>
+            <td>@RomState?.Employee?.FirstName @RomState?.Employee?.LastName</td>
+          </tr>
+          <tr>
+            <td>Manager</td>
+            <td>@RomState?.Manager?.FirstName @RomState?.Manager?.LastName</td>
+          </tr> *@
+        </tbody>
+      </table>
+    </div>
+
+    <div class="mt-4">
+      <a class="btn btn-primary" title="Go Back" href="admin/rom-state">
+        Back to Grid
+      </a>
+      <span>&nbsp;</span>
+      @if (!Deleted)
+      {
+        <a class="btn btn-primary" href="admin/rom-state/edit/@RomState.Id" title="Edit">Edit</a>
+
+        <span>&nbsp;</span>
+        @if (!ShowConfirmation)
+        {
+          <button class="btn btn-danger" @onclick="@(() => { ShowConfirmation = true; EditSuccess = false; })">Delete</button>
+        }
+        else
+        {
+          <br />
+          <br />
+          <DeletePrompt Confirmation="@(async result => await ConfirmAsync(result))" />
+        }
+      }
+      else
+      {
+        <div class="btn btn-danger">🚫 This Rom State has been deleted.</div>
+      }
+    </div>
+  }
+}
+
+@code {
+  private bool Loading;
+
+  [Parameter]
+  public Guid RomStateId { get; set; }
+
+  private Guid _lastRomStateId;
+
+  [Parameter]
+  public bool EditSuccess { get; set; }
+
+  private RomState? RomState { get; set; }
+
+  private bool NotFound = false;
+
+  private bool ShowConfirmation = false;
+
+  private bool Deleted = false;
+
+  protected override async Task OnParametersSetAsync()
+  {
+    if (_lastRomStateId != RomStateId)
+    {
+      EditSuccess = EditSuccessState.Success;
+      EditSuccessState.Success = false;
+      _lastRomStateId = RomStateId;
+      await LoadRomStateAsync();
+    }
+  }
+
+  private async Task ConfirmAsync(bool result)
+  {
+    if (result)
+    {
+      await DeleteAsync();
+    }
+    else
+    {
+      ShowConfirmation = false;
+      EditSuccess = false;
+    }
+  }
+
+  private async Task LoadRomStateAsync()
+  {
+    if (Loading)
+    {
+      return;
+    }
+
+    NotFound = false;
+    RomState = null;
+
+    Loading = true;
+
+    using var context = DbFactory.CreateDbContext();
+
+    if (context.RomStates is not null)
+    {
+      RomState = await context.RomStates
+        @* IncludeCodePlaceholder *@
+        @* .Include(x => x.Employee)
+        .Include(x => x.Manager) *@
+        .AsNoTracking()
+        .SingleOrDefaultAsync(
+          x => x.Id == RomStateId);
+
+      if (RomState is null)
+      {
+        NotFound = true;
+      }
+    }
+
+    Loading = false;
+  }
+
+  private async Task DeleteAsync()
+  {
+    if (Loading)
+    {
+      return;
+    }
+
+    Loading = true;
+    using var context = DbFactory?.CreateDbContext();
+
+    if (context?.RomStates is not null)
+    {
+      var romState = await context.RomStates
+        .SingleOrDefaultAsync(x => x.Id == RomStateId);
+
+      if (romState is not null)
+      {
+        context.RomStates?.Remove(romState);
+        await context.SaveChangesAsync();
+        Loading = false;
+        Deleted = true;
+      }
+      else
+      {
+        Loading = false;
+        await LoadRomStateAsync();
+      }
+    }
+    else
+    {
+      Loading = false;
+      await LoadRomStateAsync();
+    }
+  }
+}

@@ -1,0 +1,190 @@
+<h1>@Mode PlaySession</h1>
+
+<hr />
+@if (PlaySession is not null)
+{
+    <EditForm Model="PlaySession" OnInvalidSubmit="(async () => await HandleSubmitAsync(false))" OnValidSubmit="(async () => await HandleSubmitAsync(true))">
+        <DataAnnotationsValidator />
+        <ValidationSummary />
+
+        <h2>Emulator Core</h2>
+        <p>
+            <label>
+                Emulator Core:
+                <InputSelect @bind-Value="SelectedEmulatorCoreId" @oninput="HandleEmulatorCoreChange" class="form-select">
+                    <option value="">-- Select Emulator Core --</option>
+                    @foreach (var emulatorCore in EmulatorCoreList)
+                    {
+                        <option value="@emulatorCore.Id">@emulatorCore?.Name</option>
+                    }
+                </InputSelect>
+            </label>
+        </p>
+        <div class="mb-3">
+            <label class="form-label">End Date Time:
+                <InputDate @bind-Value="PlaySession.EndDateTime" @oninput="HandleEndDateTimeChange" class="form-control"/>
+            </label>
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Is Test?:
+                <InputCheckbox @bind-Value="PlaySession.IsTest" @oninput="HandleIsTestChange" class="form-check-input"/>
+            </label>
+        </div>
+        <h2>Rom</h2>
+        <p>
+            <label>
+                Rom:
+                <InputSelect @bind-Value="SelectedRomId" @oninput="HandleRomChange" class="form-select">
+                    <option value="">-- Select Rom --</option>
+                    @foreach (var rom in RomList)
+                    {
+                        <option value="@rom.Id">@rom?.FileName</option>
+                    }
+                </InputSelect>
+            </label>
+        </p>
+        <div class="mb-3">
+            <label class="form-label">Start Date Time:
+                <InputDate @bind-Value="PlaySession.StartDateTime" @oninput="HandleStartDateTimeChange" class="form-control"/>
+            </label>
+        </div>
+        @* PropertyFormCodePlaceholder *@
+
+        <button type="button" disabled="@Busy" class="btn btn-warning" @onclick="CancelAsync">
+            Cancel
+        </button>&nbsp;
+        <button disabled="@Busy" type="submit" class="btn btn-primary">
+            Submit
+        </button>
+    </EditForm>
+}
+
+@code {
+    [Parameter]
+    public EventCallback<bool> ValidationResult { get; set; }
+
+    [Parameter]
+    public EventCallback CancelRequest { get; set; }
+
+    [Parameter]
+    public bool IsAdd { get; set; }
+
+    [Parameter]
+    public PlaySession? PlaySession { get; set; }
+
+    [Parameter]
+    public PlaySession? DbPlaySession { get; set; }
+
+    [Parameter]
+    public bool Busy { get; set; }
+
+    private string Mode => IsAdd ? "Add" : "Edit";
+
+    [Parameter]
+    public List<EmulatorCore> EmulatorCoreList { get; set; } = new List<EmulatorCore>();
+    private Guid SelectedEmulatorCoreId;
+    [Parameter]
+    public List<Rom> RomList { get; set; } = new List<Rom>();
+    private Guid SelectedRomId;
+    @* DeclareListCodePlaceholder *@
+
+    protected override void OnInitialized()
+    {
+        if (PlaySession?.EmulatorCore != null && !IsAdd)
+        {
+            SelectedEmulatorCoreId = PlaySession.EmulatorCore.Id;
+        }
+        if (PlaySession?.Rom != null && !IsAdd)
+        {
+            SelectedRomId = PlaySession.Rom.Id;
+        }
+        @* OnInitialCodePlaceholder *@
+        @* if (EmulatorCore?.Emulator != null && !IsAdd)
+        {
+            SelectedEmulatorId = EmulatorCore.Emulator.Id;
+        } *@
+    }
+
+    private async Task CancelAsync() => await CancelRequest.InvokeAsync(null);
+
+    private async Task HandleSubmitAsync(bool isValid) => await ValidationResult.InvokeAsync(isValid);
+
+    private void HandleEmulatorCoreChange(ChangeEventArgs changeEventArgs)
+    {
+        if (PlaySession == null)
+        {
+            return;
+        }
+
+        if (changeEventArgs == null)
+        {
+            return;
+        }
+
+        if (changeEventArgs.Value == null)
+        {
+            return;
+        }
+
+        if (changeEventArgs.Value is string value && Guid.TryParse(value, out Guid selectedEmulatorCoreId))
+        {
+            SelectedEmulatorCoreId = selectedEmulatorCoreId;
+            var selectedEmulatorCore = EmulatorCoreList.FirstOrDefault(x => x.Id == SelectedEmulatorCoreId);
+
+            if (selectedEmulatorCore != null)
+            {
+                PlaySession.EmulatorCore = selectedEmulatorCore;
+            }
+        }
+
+        // SpecializedCodeEmulatorCorePlaceholder
+    }
+
+    private void HandleEndDateTimeChange(ChangeEventArgs changeEventArgs)
+    {
+        // SpecializedCodeEndDateTimePlaceholder
+    }
+
+    private void HandleIsTestChange(ChangeEventArgs changeEventArgs)
+    {
+        // SpecializedCodeIsTestPlaceholder
+    }
+
+    private void HandleRomChange(ChangeEventArgs changeEventArgs)
+    {
+        if (PlaySession == null)
+        {
+            return;
+        }
+
+        if (changeEventArgs == null)
+        {
+            return;
+        }
+
+        if (changeEventArgs.Value == null)
+        {
+            return;
+        }
+
+        if (changeEventArgs.Value is string value && Guid.TryParse(value, out Guid selectedRomId))
+        {
+            SelectedRomId = selectedRomId;
+            var selectedRom = RomList.FirstOrDefault(x => x.Id == SelectedRomId);
+
+            if (selectedRom != null)
+            {
+                PlaySession.Rom = selectedRom;
+            }
+        }
+
+        // SpecializedCodeRomPlaceholder
+    }
+
+    private void HandleStartDateTimeChange(ChangeEventArgs changeEventArgs)
+    {
+        // SpecializedCodeStartDateTimePlaceholder
+    }
+
+    // HandleChangeCodePlaceholder
+}

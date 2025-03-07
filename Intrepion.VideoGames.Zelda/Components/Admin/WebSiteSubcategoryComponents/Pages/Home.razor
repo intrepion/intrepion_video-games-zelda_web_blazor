@@ -1,0 +1,85 @@
+@page "/admin/web-site-subcategory"
+@rendermode InteractiveServer
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject NavigationManager Navigation
+
+<PageTitle>WebSite Subcategory Home</PageTitle>
+
+<h1>WebSite Subcategory Home</h1>
+<h6><a href="/admin/web-site-subcategory/add">Create New</a></h6>
+
+<div class="container-fluid">
+  <table class="table table-hover table-primary table-striped">
+    <thead>
+      <tr>
+        <th>Actions</th>
+        <th>Is Test?</th>
+        <th>Name</th>
+        <th>Web Site</th>
+        <th>Web Site Category</th>
+        @* TableHeaderCodePlaceholder *@
+      </tr>
+    </thead>
+    <tbody>
+      @if (webSiteSubcategories is not null)
+      {
+        @foreach (var webSiteSubcategory in webSiteSubcategories)
+        {
+          <tr>
+            <td>
+              <div class="btn-group">
+                <a class="btn btn-primary btn-sm btn-info" href="/admin/web-site-subcategory/view/@webSiteSubcategory.Id" title="View">
+                  <i class="bi bi-eye"></i>
+                </a>
+                <a class="btn btn-primary btn-sm" href="/admin/web-site-subcategory/edit/@webSiteSubcategory.Id" title="Edit">
+                  <i class="bi bi-pencil"></i>
+                </a>
+              </div>
+            </td>
+            <td>
+              @if (webSiteSubcategory != null && webSiteSubcategory.IsTest)
+              {
+                <span class="badge bg-success">Yes</span>
+              }
+              else
+              {
+                <span class="badge bg-warning text-dark">No</span>
+              }
+            </td>
+            <td>@webSiteSubcategory?.Name</td>
+            <td>@webSiteSubcategory?.WebSite?.Name</td>
+            <td>@webSiteSubcategory?.WebSiteCategory?.Name</td>
+            @* TableRowCodePlaceholder *@
+          </tr>
+        }
+      }
+    </tbody>
+  </table>
+</div>
+
+@code {
+  private ICollection<WebSiteSubcategory>? webSiteSubcategories { get; set; }
+
+  protected override async Task OnParametersSetAsync()
+  {
+    await ReloadAsync();
+  }
+
+  private async Task ReloadAsync()
+  {
+    webSiteSubcategories = new List<WebSiteSubcategory>();
+
+    using var context = DbFactory.CreateDbContext();
+    var query = context.WebSiteSubcategories?.AsQueryable();
+
+    if (query is not null)
+    {
+      webSiteSubcategories = await query
+        .Include(x => x.WebSite)
+        .Include(x => x.WebSiteCategory)
+        @* QueryIncludeCodePlaceholder *@
+        .AsNoTracking().ToListAsync();
+    }
+  }
+}
+

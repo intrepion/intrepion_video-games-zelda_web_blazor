@@ -1,0 +1,206 @@
+@page "/admin/emulator-core/view/{EmulatorCoreId:guid}"
+@rendermode InteractiveServer
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject EditSuccess EditSuccessState
+
+<PageTitle>Emulator Core View</PageTitle>
+
+@if (NotFound && !Loading)
+{
+  <div class="alert alert-warning">Emulator Core with that id doesn't exist.</div>
+}
+else
+{
+  @if (EmulatorCore is null || Loading)
+  {
+    <div class="alert alert-info">Loading...</div>
+  }
+  else
+  {
+    @* <h1>Emulator Core Details</h1>
+    <h6>ID: @EmulatorCore.Id</h6> *@
+    <h1>Emulator Core Details</h1>
+    <h6>ID: @EmulatorCore.Id</h6>
+    @* PageHeaderCodePlaceholder *@
+
+    <br />
+    @if (EditSuccess)
+    {
+      <div class="alert alert-success">Successfully updated the Emulator Core.</div>
+    }
+    <hr />
+
+    <div class="container-fluid">
+      <table class="table table-hover table-primary table-striped">
+        <thead>
+          <tr>
+            <th>Property</th>
+            <th>Value</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>ID</td>
+            <td>@EmulatorCore.Id</td>
+          </tr>
+          <tr>
+            <td>IsTest</td>
+            <td>@EmulatorCore?.IsTest</td>
+          </tr>
+          <tr>
+            <td>Name</td>
+            <td>@EmulatorCore?.Name</td>
+          </tr>
+          @* ViewPropertyCodePlaceholder *@
+          @* <tr>
+            <td>Employee</td>
+            <td>@EmulatorCore?.Employee?.FirstName @EmulatorCore?.Employee?.LastName</td>
+          </tr>
+          <tr>
+            <td>Manager</td>
+            <td>@EmulatorCore?.Manager?.FirstName @EmulatorCore?.Manager?.LastName</td>
+          </tr> *@
+        </tbody>
+      </table>
+    </div>
+
+    <div class="mt-4">
+      <a class="btn btn-primary" title="Go Back" href="admin/emulator-core">
+        Back to Grid
+      </a>
+      <span>&nbsp;</span>
+      @if (!Deleted)
+      {
+        <a class="btn btn-primary" href="admin/emulator-core/edit/@EmulatorCore.Id" title="Edit">Edit</a>
+
+        <span>&nbsp;</span>
+        @if (!ShowConfirmation)
+        {
+          <button class="btn btn-danger" @onclick="@(() => { ShowConfirmation = true; EditSuccess = false; })">Delete</button>
+        }
+        else
+        {
+          <br />
+          <br />
+          <DeletePrompt Confirmation="@(async result => await ConfirmAsync(result))" />
+        }
+      }
+      else
+      {
+        <div class="btn btn-danger">🚫 This Emulator Core has been deleted.</div>
+      }
+    </div>
+  }
+}
+
+@code {
+  private bool Loading;
+
+  [Parameter]
+  public Guid EmulatorCoreId { get; set; }
+
+  private Guid _lastEmulatorCoreId;
+
+  [Parameter]
+  public bool EditSuccess { get; set; }
+
+  private EmulatorCore? EmulatorCore { get; set; }
+
+  private bool NotFound = false;
+
+  private bool ShowConfirmation = false;
+
+  private bool Deleted = false;
+
+  protected override async Task OnParametersSetAsync()
+  {
+    if (_lastEmulatorCoreId != EmulatorCoreId)
+    {
+      EditSuccess = EditSuccessState.Success;
+      EditSuccessState.Success = false;
+      _lastEmulatorCoreId = EmulatorCoreId;
+      await LoadEmulatorCoreAsync();
+    }
+  }
+
+  private async Task ConfirmAsync(bool result)
+  {
+    if (result)
+    {
+      await DeleteAsync();
+    }
+    else
+    {
+      ShowConfirmation = false;
+      EditSuccess = false;
+    }
+  }
+
+  private async Task LoadEmulatorCoreAsync()
+  {
+    if (Loading)
+    {
+      return;
+    }
+
+    NotFound = false;
+    EmulatorCore = null;
+
+    Loading = true;
+
+    using var context = DbFactory.CreateDbContext();
+
+    if (context.EmulatorCores is not null)
+    {
+      EmulatorCore = await context.EmulatorCores
+        @* IncludeCodePlaceholder *@
+        @* .Include(x => x.Employee)
+        .Include(x => x.Manager) *@
+        .AsNoTracking()
+        .SingleOrDefaultAsync(
+          x => x.Id == EmulatorCoreId);
+
+      if (EmulatorCore is null)
+      {
+        NotFound = true;
+      }
+    }
+
+    Loading = false;
+  }
+
+  private async Task DeleteAsync()
+  {
+    if (Loading)
+    {
+      return;
+    }
+
+    Loading = true;
+    using var context = DbFactory?.CreateDbContext();
+
+    if (context?.EmulatorCores is not null)
+    {
+      var emulatorCore = await context.EmulatorCores
+        .SingleOrDefaultAsync(x => x.Id == EmulatorCoreId);
+
+      if (emulatorCore is not null)
+      {
+        context.EmulatorCores?.Remove(emulatorCore);
+        await context.SaveChangesAsync();
+        Loading = false;
+        Deleted = true;
+      }
+      else
+      {
+        Loading = false;
+        await LoadEmulatorCoreAsync();
+      }
+    }
+    else
+    {
+      Loading = false;
+      await LoadEmulatorCoreAsync();
+    }
+  }
+}
