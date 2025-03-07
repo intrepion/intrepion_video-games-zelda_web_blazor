@@ -1,0 +1,207 @@
+@page "/admin/rom-transition/view/{RomTransitionId:guid}"
+@rendermode InteractiveServer
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject EditSuccess EditSuccessState
+
+<PageTitle>Rom Transition View</PageTitle>
+
+@if (NotFound && !Loading)
+{
+  <div class="alert alert-warning">Rom Transition with that id doesn't exist.</div>
+}
+else
+{
+  @if (RomTransition is null || Loading)
+  {
+    <div class="alert alert-info">Loading...</div>
+  }
+  else
+  {
+    <h1>Rom Transition Details</h1>
+    <h6>ID: @RomTransition.Id</h6>
+    @* PageHeaderCodePlaceholder *@
+
+    <br />
+    @if (EditSuccess)
+    {
+      <div class="alert alert-success">Successfully updated the Rom Transition.</div>
+    }
+    <hr />
+
+    <div class="container-fluid">
+      <table class="table table-hover table-primary table-striped">
+        <thead>
+          <tr>
+            <th>Property</th>
+            <th>Value</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>ID</td>
+            <td>@RomTransition.Id</td>
+          </tr>
+          <tr>
+            <td>IsTest</td>
+            <td>@RomTransition?.IsTest</td>
+          </tr>
+          <tr>
+            <td>PreviousRomState</td>
+            <td>@RomTransition?.PreviousRomState?.Name</td>
+          </tr>
+          <tr>
+            <td>RomInput</td>
+            <td>@RomTransition?.RomInput?.Name</td>
+          </tr>
+          <tr>
+            <td>RomState</td>
+            <td>@RomTransition?.RomState?.Name</td>
+          </tr>
+          @* ViewPropertyCodePlaceholder *@
+        </tbody>
+      </table>
+    </div>
+
+    <div class="mt-4">
+      <a class="btn btn-primary" title="Go Back" href="admin/rom-transition">
+        Back to Grid
+      </a>
+      <span>&nbsp;</span>
+      @if (!Deleted)
+      {
+        <a class="btn btn-primary" href="admin/rom-transition/edit/@RomTransition.Id" title="Edit">Edit</a>
+
+        <span>&nbsp;</span>
+        @if (!ShowConfirmation)
+        {
+          <button class="btn btn-danger" @onclick="@(() => { ShowConfirmation = true; EditSuccess = false; })">Delete</button>
+        }
+        else
+        {
+          <br />
+          <br />
+          <DeletePrompt Confirmation="@(async result => await ConfirmAsync(result))" />
+        }
+      }
+      else
+      {
+        <div class="btn btn-danger">🚫 This Rom Transition has been deleted.</div>
+      }
+    </div>
+  }
+}
+
+@code {
+  private bool Loading;
+
+  [Parameter]
+  public Guid RomTransitionId { get; set; }
+
+  private Guid _lastRomTransitionId;
+
+  [Parameter]
+  public bool EditSuccess { get; set; }
+
+  private RomTransition? RomTransition { get; set; }
+
+  private bool NotFound = false;
+
+  private bool ShowConfirmation = false;
+
+  private bool Deleted = false;
+
+  protected override async Task OnParametersSetAsync()
+  {
+    if (_lastRomTransitionId != RomTransitionId)
+    {
+      EditSuccess = EditSuccessState.Success;
+      EditSuccessState.Success = false;
+      _lastRomTransitionId = RomTransitionId;
+      await LoadRomTransitionAsync();
+    }
+  }
+
+  private async Task ConfirmAsync(bool result)
+  {
+    if (result)
+    {
+      await DeleteAsync();
+    }
+    else
+    {
+      ShowConfirmation = false;
+      EditSuccess = false;
+    }
+  }
+
+  private async Task LoadRomTransitionAsync()
+  {
+    if (Loading)
+    {
+      return;
+    }
+
+    NotFound = false;
+    RomTransition = null;
+
+    Loading = true;
+
+    using var context = DbFactory.CreateDbContext();
+
+    if (context.RomTransitions is not null)
+    {
+      RomTransition = await context.RomTransitions
+        .Include(x => x.PreviousRomState)
+            .Include(x => x.RomInput)
+            .Include(x => x.RomState)
+            @* TableIncludeCodePlaceholder *@
+        @* .Include(x => x.Employee)
+        .Include(x => x.Manager) *@
+        .AsNoTracking()
+        .SingleOrDefaultAsync(
+          x => x.Id == RomTransitionId);
+
+      if (RomTransition is null)
+      {
+        NotFound = true;
+      }
+    }
+
+    Loading = false;
+  }
+
+  private async Task DeleteAsync()
+  {
+    if (Loading)
+    {
+      return;
+    }
+
+    Loading = true;
+    using var context = DbFactory?.CreateDbContext();
+
+    if (context?.RomTransitions is not null)
+    {
+      var romTransition = await context.RomTransitions
+        .SingleOrDefaultAsync(x => x.Id == RomTransitionId);
+
+      if (romTransition is not null)
+      {
+        context.RomTransitions?.Remove(romTransition);
+        await context.SaveChangesAsync();
+        Loading = false;
+        Deleted = true;
+      }
+      else
+      {
+        Loading = false;
+        await LoadRomTransitionAsync();
+      }
+    }
+    else
+    {
+      Loading = false;
+      await LoadRomTransitionAsync();
+    }
+  }
+}

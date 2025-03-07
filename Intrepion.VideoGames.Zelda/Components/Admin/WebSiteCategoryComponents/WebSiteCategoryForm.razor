@@ -1,0 +1,146 @@
+<h1>@Mode WebSiteCategory</h1>
+
+<hr />
+@if (WebSiteCategory is not null)
+{
+    <EditForm Model="WebSiteCategory" OnInvalidSubmit="(async () => await HandleSubmitAsync(false))" OnValidSubmit="(async () => await HandleSubmitAsync(true))">
+        <DataAnnotationsValidator />
+        <ValidationSummary />
+
+        <div class="mb-3">
+            <label class="form-label">Is Test?:
+                <InputCheckbox @bind-Value="WebSiteCategory.IsTest" @oninput="HandleIsTestChange" class="form-check-input"/>
+            </label>
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Name:
+                <InputText @bind-Value="WebSiteCategory.Name" @oninput="HandleNameChange" class="form-control"/>
+            </label>
+        </div>
+        <h2>Web Site</h2>
+        <p>
+            <label>
+                Web Site:
+                <InputSelect @bind-Value="SelectedWebSiteId" @oninput="HandleWebSiteChange" class="form-select">
+                    <option value="">-- Select Web Site --</option>
+                    @foreach (var webSite in WebSiteList)
+                    {
+                        <option value="@webSite.Id">@webSite?.Name</option>
+                    }
+                </InputSelect>
+            </label>
+        </p>
+        @* PropertyFormCodePlaceholder *@
+
+        <button type="button" disabled="@Busy" class="btn btn-warning" @onclick="CancelAsync">
+            Cancel
+        </button>&nbsp;
+        <button disabled="@Busy" type="submit" class="btn btn-primary">
+            Submit
+        </button>
+    </EditForm>
+}
+
+@code {
+    [Parameter]
+    public EventCallback<bool> ValidationResult { get; set; }
+
+    [Parameter]
+    public EventCallback CancelRequest { get; set; }
+
+    [Parameter]
+    public bool IsAdd { get; set; }
+
+    [Parameter]
+    public WebSiteCategory? WebSiteCategory { get; set; }
+
+    [Parameter]
+    public WebSiteCategory? DbWebSiteCategory { get; set; }
+
+    [Parameter]
+    public bool Busy { get; set; }
+
+    private string Mode => IsAdd ? "Add" : "Edit";
+
+    [Parameter]
+    public List<WebSite> WebSiteList { get; set; } = new List<WebSite>();
+    private Guid SelectedWebSiteId;
+    @* DeclareListCodePlaceholder *@
+
+    protected override void OnInitialized()
+    {
+        if (WebSiteCategory?.WebSite != null && !IsAdd)
+        {
+            SelectedWebSiteId = WebSiteCategory.WebSite.Id;
+        }
+        @* OnInitialCodePlaceholder *@
+        @* if (EmulatorCore?.Emulator != null && !IsAdd)
+        {
+            SelectedEmulatorId = EmulatorCore.Emulator.Id;
+        } *@
+    }
+
+    private async Task CancelAsync() => await CancelRequest.InvokeAsync(null);
+
+    private async Task HandleSubmitAsync(bool isValid) => await ValidationResult.InvokeAsync(isValid);
+
+    private void HandleIsTestChange(ChangeEventArgs changeEventArgs)
+    {
+        // SpecializedCodeIsTestPlaceholder
+    }
+
+    private void HandleNameChange(ChangeEventArgs changeEventArgs)
+    {
+        if (WebSiteCategory == null)
+        {
+            return;
+        }
+
+        if (changeEventArgs == null)
+        {
+            return;
+        }
+
+        if (changeEventArgs.Value == null)
+        {
+            return;
+        }
+
+        WebSiteCategory.NormalizedName = ((string)changeEventArgs.Value).ToUpperInvariant();
+
+        // SpecializedCodeNamePlaceholder
+    }
+
+    private void HandleWebSiteChange(ChangeEventArgs changeEventArgs)
+    {
+        if (WebSiteCategory == null)
+        {
+            return;
+        }
+
+        if (changeEventArgs == null)
+        {
+            return;
+        }
+
+        if (changeEventArgs.Value == null)
+        {
+            return;
+        }
+
+        if (changeEventArgs.Value is string value && Guid.TryParse(value, out Guid selectedWebSiteId))
+        {
+            SelectedWebSiteId = selectedWebSiteId;
+            var selectedWebSite = WebSiteList.FirstOrDefault(x => x.Id == SelectedWebSiteId);
+
+            if (selectedWebSite != null)
+            {
+                WebSiteCategory.WebSite = selectedWebSite;
+            }
+        }
+
+        // SpecializedCodeWebSitePlaceholder
+    }
+
+    // HandleChangeCodePlaceholder
+}

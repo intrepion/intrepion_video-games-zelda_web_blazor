@@ -1,0 +1,205 @@
+@page "/admin/game-console/view/{GameConsoleId:guid}"
+@rendermode InteractiveServer
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject EditSuccess EditSuccessState
+
+<PageTitle>Game Console View</PageTitle>
+
+@if (NotFound && !Loading)
+{
+  <div class="alert alert-warning">Game Console with that id doesn't exist.</div>
+}
+else
+{
+  @if (GameConsole is null || Loading)
+  {
+    <div class="alert alert-info">Loading...</div>
+  }
+  else
+  {
+    <h1>Game Console Details</h1>
+    <h6>ID: @GameConsole.Id</h6>
+    @* PageHeaderCodePlaceholder *@
+
+    <br />
+    @if (EditSuccess)
+    {
+      <div class="alert alert-success">Successfully updated the Game Console.</div>
+    }
+    <hr />
+
+    <div class="container-fluid">
+      <table class="table table-hover table-primary table-striped">
+        <thead>
+          <tr>
+            <th>Property</th>
+            <th>Value</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>ID</td>
+            <td>@GameConsole.Id</td>
+          </tr>
+          <tr>
+            <td>Code</td>
+            <td>@GameConsole?.Code</td>
+          </tr>
+          <tr>
+            <td>Company</td>
+            <td>@GameConsole?.Company?.Name</td>
+          </tr>
+          <tr>
+            <td>IsTest</td>
+            <td>@GameConsole?.IsTest</td>
+          </tr>
+          <tr>
+            <td>Name</td>
+            <td>@GameConsole?.Name</td>
+          </tr>
+          @* ViewPropertyCodePlaceholder *@
+        </tbody>
+      </table>
+    </div>
+
+    <div class="mt-4">
+      <a class="btn btn-primary" title="Go Back" href="admin/game-console">
+        Back to Grid
+      </a>
+      <span>&nbsp;</span>
+      @if (!Deleted)
+      {
+        <a class="btn btn-primary" href="admin/game-console/edit/@GameConsole.Id" title="Edit">Edit</a>
+
+        <span>&nbsp;</span>
+        @if (!ShowConfirmation)
+        {
+          <button class="btn btn-danger" @onclick="@(() => { ShowConfirmation = true; EditSuccess = false; })">Delete</button>
+        }
+        else
+        {
+          <br />
+          <br />
+          <DeletePrompt Confirmation="@(async result => await ConfirmAsync(result))" />
+        }
+      }
+      else
+      {
+        <div class="btn btn-danger">🚫 This Game Console has been deleted.</div>
+      }
+    </div>
+  }
+}
+
+@code {
+  private bool Loading;
+
+  [Parameter]
+  public Guid GameConsoleId { get; set; }
+
+  private Guid _lastGameConsoleId;
+
+  [Parameter]
+  public bool EditSuccess { get; set; }
+
+  private GameConsole? GameConsole { get; set; }
+
+  private bool NotFound = false;
+
+  private bool ShowConfirmation = false;
+
+  private bool Deleted = false;
+
+  protected override async Task OnParametersSetAsync()
+  {
+    if (_lastGameConsoleId != GameConsoleId)
+    {
+      EditSuccess = EditSuccessState.Success;
+      EditSuccessState.Success = false;
+      _lastGameConsoleId = GameConsoleId;
+      await LoadGameConsoleAsync();
+    }
+  }
+
+  private async Task ConfirmAsync(bool result)
+  {
+    if (result)
+    {
+      await DeleteAsync();
+    }
+    else
+    {
+      ShowConfirmation = false;
+      EditSuccess = false;
+    }
+  }
+
+  private async Task LoadGameConsoleAsync()
+  {
+    if (Loading)
+    {
+      return;
+    }
+
+    NotFound = false;
+    GameConsole = null;
+
+    Loading = true;
+
+    using var context = DbFactory.CreateDbContext();
+
+    if (context.GameConsoles is not null)
+    {
+      GameConsole = await context.GameConsoles
+        .Include(x => x.Company)
+            @* TableIncludeCodePlaceholder *@
+        @* .Include(x => x.Employee)
+        .Include(x => x.Manager) *@
+        .AsNoTracking()
+        .SingleOrDefaultAsync(
+          x => x.Id == GameConsoleId);
+
+      if (GameConsole is null)
+      {
+        NotFound = true;
+      }
+    }
+
+    Loading = false;
+  }
+
+  private async Task DeleteAsync()
+  {
+    if (Loading)
+    {
+      return;
+    }
+
+    Loading = true;
+    using var context = DbFactory?.CreateDbContext();
+
+    if (context?.GameConsoles is not null)
+    {
+      var gameConsole = await context.GameConsoles
+        .SingleOrDefaultAsync(x => x.Id == GameConsoleId);
+
+      if (gameConsole is not null)
+      {
+        context.GameConsoles?.Remove(gameConsole);
+        await context.SaveChangesAsync();
+        Loading = false;
+        Deleted = true;
+      }
+      else
+      {
+        Loading = false;
+        await LoadGameConsoleAsync();
+      }
+    }
+    else
+    {
+      Loading = false;
+      await LoadGameConsoleAsync();
+    }
+  }
+}

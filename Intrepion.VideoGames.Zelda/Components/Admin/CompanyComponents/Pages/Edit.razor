@@ -1,0 +1,161 @@
+@page "/admin/company/add"
+@page "/admin/company/edit/{CompanyId:guid?}"
+@rendermode InteractiveServer
+@implements IDisposable
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject NavigationManager Navigation
+
+<PageTitle>Company @(IsAdd ? "Add" : "Edit")</PageTitle>
+
+@if (Company is null && !Busy && !IsAdd)
+{
+  <p>Could not find Company with id @CompanyId.</p>
+}
+else
+{
+    @* EmulatorList="EmulatorList" *@
+  <CompanyForm
+    Busy="Busy" 
+    CancelRequest="Cancel"
+    DbCompany="DbCompany" 
+    Company="Company" 
+    IsAdd="IsAdd"
+    ValidationResult="@(async (success) => await ValidationResultAsync(success))"
+  />
+}
+
+@if (Error)
+{
+  <br />
+  <div class="alert alert-danger">Failed to @(IsAdd ? "add" : "update") the Company (@ErrorMessage).</div>
+}
+
+@code {
+  [Parameter]
+  public Guid? CompanyId { get; set; }
+
+  private bool IsAdd => CompanyId == null;
+
+  private ApplicationDbContext? Context { get; set; }
+
+  private Company? Company { get; set; }
+
+  private Company DbCompany { get; set; } = new Company();
+
+  @* ListDeclarationCodePlaceholder *@
+  @* private List<Emulator> EmulatorList { get; set; } = new List<Emulator>();*@
+
+  private bool Busy;
+
+  private bool Error;
+
+  private string ErrorMessage = string.Empty;
+
+  protected override async Task OnInitializedAsync()
+  {
+    Busy = true;
+
+    try
+    {
+      Context = DbFactory.CreateDbContext();
+
+      @* LoadListCodePlaceholder *@
+      @* if (Context.Emulators != null)
+      {
+        EmulatorList = await Context.Emulators.OrderBy(e => e.Name).ToListAsync();
+      } *@
+
+      if (IsAdd)
+      {
+        Company = new();
+      }
+      else if (Context is not null && Context.Companies is not null)
+      {
+        var company = await Context.Companies
+            @* IncludeListCodePlaceholder *@
+            @* .Include(e => e.Emulator) *@
+            .SingleOrDefaultAsync(x => x.Id == CompanyId);
+
+        if (company is not null)
+        {
+          Company = company;
+        }
+      }
+    }
+    finally
+    {
+      Busy = false;
+    }
+  }
+
+  private async Task ValidationResultAsync(bool success)
+  {
+    if (Busy)
+    {
+      return;
+    }
+
+    if (!success)
+    {
+      Error = false;
+      return;
+    }
+
+    Busy = true;
+
+    try
+    {
+      if (Context is not null && Company is not null)
+      {
+        @* SetExistingCodePlaceholder *@
+        @* if (Company.Emulator != null && Company.Emulator.Id != Guid.Empty)
+        {
+          var existingEmulator = await Context.Emulators.FindAsync(Company.Emulator.Id);
+          if (existingEmulator != null)
+          {
+            Company.Emulator = existingEmulator;
+          }
+        } *@
+        
+        if (IsAdd && Context.Companies != null)
+        {
+          Context.Companies.Add(Company);
+        }
+        
+        await Context.SaveChangesAsync();
+      }
+
+      Navigation.NavigateTo($"/admin/company/view/{Company?.Id}");
+    }
+    catch (DbUpdateConcurrencyException dbex)
+    {
+      var dbValues = dbex.Entries[0].GetDatabaseValues();
+
+      if (dbValues is null)
+      {
+        Navigation.NavigateTo($"/admin/company/view/{Company?.Id}");
+        return;
+      }
+
+      DbCompany = (Company)dbValues.ToObject();
+
+      dbex.Entries[0].OriginalValues.SetValues(dbValues);
+      Error = false;
+      Busy = false;
+    }
+    catch (Exception ex)
+    {
+      Error = true;
+      ErrorMessage = ex.Message;
+      Busy = false;
+    }
+  }
+
+  private void Cancel()
+  {
+    Busy = true;
+    Navigation.NavigateTo($"/admin/company");
+  }
+
+  public void Dispose() => Context?.Dispose();
+}

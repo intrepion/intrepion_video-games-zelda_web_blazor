@@ -1,0 +1,201 @@
+@page "/admin/web-site-category/view/{WebSiteCategoryId:guid}"
+@rendermode InteractiveServer
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject EditSuccess EditSuccessState
+
+<PageTitle>WebSiteCategory View</PageTitle>
+
+@if (NotFound && !Loading)
+{
+  <div class="alert alert-warning">WebSiteCategory with that id doesn't exist.</div>
+}
+else
+{
+  @if (WebSiteCategory is null || Loading)
+  {
+    <div class="alert alert-info">Loading...</div>
+  }
+  else
+  {
+    <h1>WebSiteCategory Details</h1>
+    <h6>ID: @WebSiteCategory.Id</h6>
+    @* PageHeaderCodePlaceholder *@
+
+    <br />
+    @if (EditSuccess)
+    {
+      <div class="alert alert-success">Successfully updated the WebSiteCategory.</div>
+    }
+    <hr />
+
+    <div class="container-fluid">
+      <table class="table table-hover table-primary table-striped">
+        <thead>
+          <tr>
+            <th>Property</th>
+            <th>Value</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>ID</td>
+            <td>@WebSiteCategory.Id</td>
+          </tr>
+          <tr>
+            <td>IsTest</td>
+            <td>@WebSiteCategory?.IsTest</td>
+          </tr>
+          <tr>
+            <td>Name</td>
+            <td>@WebSiteCategory?.Name</td>
+          </tr>
+          <tr>
+            <td>WebSite</td>
+            <td>@WebSiteCategory?.WebSite?.Name</td>
+          </tr>
+          @* ViewPropertyCodePlaceholder *@
+        </tbody>
+      </table>
+    </div>
+
+    <div class="mt-4">
+      <a class="btn btn-primary" title="Go Back" href="admin/web-site-category">
+        Back to Grid
+      </a>
+      <span>&nbsp;</span>
+      @if (!Deleted)
+      {
+        <a class="btn btn-primary" href="admin/web-site-category/edit/@WebSiteCategory.Id" title="Edit">Edit</a>
+
+        <span>&nbsp;</span>
+        @if (!ShowConfirmation)
+        {
+          <button class="btn btn-danger" @onclick="@(() => { ShowConfirmation = true; EditSuccess = false; })">Delete</button>
+        }
+        else
+        {
+          <br />
+          <br />
+          <DeletePrompt Confirmation="@(async result => await ConfirmAsync(result))" />
+        }
+      }
+      else
+      {
+        <div class="btn btn-danger">🚫 This WebSiteCategory has been deleted.</div>
+      }
+    </div>
+  }
+}
+
+@code {
+  private bool Loading;
+
+  [Parameter]
+  public Guid WebSiteCategoryId { get; set; }
+
+  private Guid _lastWebSiteCategoryId;
+
+  [Parameter]
+  public bool EditSuccess { get; set; }
+
+  private WebSiteCategory? WebSiteCategory { get; set; }
+
+  private bool NotFound = false;
+
+  private bool ShowConfirmation = false;
+
+  private bool Deleted = false;
+
+  protected override async Task OnParametersSetAsync()
+  {
+    if (_lastWebSiteCategoryId != WebSiteCategoryId)
+    {
+      EditSuccess = EditSuccessState.Success;
+      EditSuccessState.Success = false;
+      _lastWebSiteCategoryId = WebSiteCategoryId;
+      await LoadWebSiteCategoryAsync();
+    }
+  }
+
+  private async Task ConfirmAsync(bool result)
+  {
+    if (result)
+    {
+      await DeleteAsync();
+    }
+    else
+    {
+      ShowConfirmation = false;
+      EditSuccess = false;
+    }
+  }
+
+  private async Task LoadWebSiteCategoryAsync()
+  {
+    if (Loading)
+    {
+      return;
+    }
+
+    NotFound = false;
+    WebSiteCategory = null;
+
+    Loading = true;
+
+    using var context = DbFactory.CreateDbContext();
+
+    if (context.WebSiteCategories is not null)
+    {
+      WebSiteCategory = await context.WebSiteCategories
+        .Include(x => x.WebSite)
+            @* TableIncludeCodePlaceholder *@
+        @* .Include(x => x.Employee)
+        .Include(x => x.Manager) *@
+        .AsNoTracking()
+        .SingleOrDefaultAsync(
+          x => x.Id == WebSiteCategoryId);
+
+      if (WebSiteCategory is null)
+      {
+        NotFound = true;
+      }
+    }
+
+    Loading = false;
+  }
+
+  private async Task DeleteAsync()
+  {
+    if (Loading)
+    {
+      return;
+    }
+
+    Loading = true;
+    using var context = DbFactory?.CreateDbContext();
+
+    if (context?.WebSiteCategories is not null)
+    {
+      var webSiteCategory = await context.WebSiteCategories
+        .SingleOrDefaultAsync(x => x.Id == WebSiteCategoryId);
+
+      if (webSiteCategory is not null)
+      {
+        context.WebSiteCategories?.Remove(webSiteCategory);
+        await context.SaveChangesAsync();
+        Loading = false;
+        Deleted = true;
+      }
+      else
+      {
+        Loading = false;
+        await LoadWebSiteCategoryAsync();
+      }
+    }
+    else
+    {
+      Loading = false;
+      await LoadWebSiteCategoryAsync();
+    }
+  }
+}

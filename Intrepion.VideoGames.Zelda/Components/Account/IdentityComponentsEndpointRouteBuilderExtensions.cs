@@ -1,8 +1,8 @@
 ﻿using System.Security.Claims;
 using System.Text.Json;
+using Intrepion.VideoGames.Zelda.BusinessLogic.Entities;
 using Intrepion.VideoGames.Zelda.Components.Account.Pages;
 using Intrepion.VideoGames.Zelda.Components.Account.Pages.Manage;
-using Intrepion.VideoGames.Zelda.Data;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Http.Extensions;
